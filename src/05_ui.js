@@ -55,7 +55,7 @@ function buildNav() {
 const BG = { bub: Array.from({ length: 26 }, (_, i) => ({ x: Math.random(), y: Math.random(), r: 4 + Math.random() * 16, v: .02 + Math.random() * .05, ph: Math.random() * 7 })) };
 function sizeCv(cv, dpr) { const w = Math.max(1, Math.round(cv.clientWidth * dpr)), h = Math.max(1, Math.round(cv.clientHeight * dpr)); if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; } }
 function drawBg(t) {
-  const cv = $("bg"), dpr = Math.min(2, devicePixelRatio || 1); sizeCv(cv, dpr); const c = cv.getContext("2d"), w = cv.width, h = cv.height; c.setTransform(1, 0, 0, 1, 0, 0);
+  const cv = $("bg"), dpr = Math.min(2, devicePixelRatio || 1); sizeCv(cv, dpr); const c0 = cv.getContext("2d"), w = cv.width, h = cv.height; c0.setTransform(1, 0, 0, 1, 0, 0); const c = sketchCtx(c0, 2.7, 50);
   const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, "#7fd0ee"); g.addColorStop(.45, "#4aa3d8"); g.addColorStop(1, "#245f8f"); c.fillStyle = g; c.fillRect(0, 0, w, h);
   c.lineJoin = c.lineCap = "round";
   for (let i = 0; i < 9; i++) {

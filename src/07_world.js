@@ -18,10 +18,14 @@ function buildWorld(M) {
   c.scale(FSC, FSC); c.lineJoin = c.lineCap = "round"; c.strokeStyle = INK;
   const tl = (x, y) => (x < 0 || y < 0 || x >= M.w || y >= M.h) ? T_WALL : M.tiles[y * M.w + x];
   for (let ty = 0; ty < M.h; ty++) for (let tx = 0; tx < M.w; tx++) {
-    const t = tl(tx, ty), r = hsh(tx, ty);
-    c.fillStyle = t === T_WATER ? th.water : t >= T_CE ? "#8fd3f0" : t === T_GRASS ? th.grass : th.floor[r < .5 ? 0 : 1];
+    const t = tl(tx, ty);
+    c.fillStyle = t === T_WATER ? th.water : t >= T_CE ? "#8fd3f0" : th.floor[0];
     c.fillRect(tx * TS, ty * TS, TS + .5, TS + .5);
   }
+  // Farbflecken wie mit dem Pinsel aufgetragen (statt Kachelmuster)
+  { const kb = sketchCtx(c, 8.8, TS * 2.2), rr = mulberry(M.w * 31 + M.h); c.lineWidth = 1; c.strokeStyle = "rgba(0,0,0,0)";
+    for (let i = 0; i < M.w * M.h / 9; i++) { const x = rr() * M.w * TS, y = rr() * M.h * TS; if (tl(Math.floor(x / TS), Math.floor(y / TS)) === T_WATER) continue; c.fillStyle = rr() < .5 ? hexA(th.floor[1], .85) : "rgba(255,255,255,.22)"; kb.beginPath(); kb.ellipse(x, y, 22 + rr() * 40, 12 + rr() * 22, rr() * 3, 0, TAU); kb.fill(); }
+    for (let ty = 0; ty < M.h; ty++) for (let tx = 0; tx < M.w; tx++) if (tl(tx, ty) === T_GRASS) { c.fillStyle = th.grass; kb.beginPath(); kb.ellipse(tx * TS + 16, ty * TS + 16, TS * .78, TS * .72, hsh(tx, ty, 2) * 3, 0, TAU); kb.fill(); } }
   // Dekoration
   c.lineWidth = 1.4; const k = sketchCtx(c, 3.3, TS * 1.4);
   for (let ty = 0; ty < M.h; ty++) for (let tx = 0; tx < M.w; tx++) {
