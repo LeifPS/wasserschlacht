@@ -269,7 +269,7 @@ let lastT = 0;
 function tickNums(dt) { for (const [k, t, id] of [["dc", "tc", "curCoins"], ["dg", "tg", "curGems"]]) { if (UI[k] == null) continue; const d = UI[t] - UI[k]; if (Math.abs(d) < 1) UI[k] = UI[t]; else UI[k] += d * Math.min(1, dt * 7) + Math.sign(d) * .5; const el = $(id); if (el) el.textContent = fmt(UI[k]); } }
 function frame(ms) {
   const t = ms / 1000, dt = Math.min(.1, t - lastT); lastT = t;
-  if (G.screen === "match") { Match.frame(t, dt); }
+  if (G.screen === "match") { try { Match.frame(t, dt); } catch (err) { console.error(err); } }
   else { tickNums(dt); drawBg(t); if (G.screen === "lobby") drawHero(t, dt); if (UI.look && $("lookCv")) drawLook(t); if (G.dropAnim) G.dropAnim(t, dt); if (G.screen === "auth") { const ad = $("authDrop"); if (ad) { const c = ad.getContext("2d"); c.clearRect(0, 0, 256, 256); drawDrop(c, { ...DEFAULT_COS, hat: "hat_party" }, 128, 140, 150, t, {}); } } }
   requestAnimationFrame(frame);
 }

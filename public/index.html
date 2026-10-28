@@ -1265,7 +1265,7 @@ let lastT = 0;
 function tickNums(dt) { for (const [k, t, id] of [["dc", "tc", "curCoins"], ["dg", "tg", "curGems"]]) { if (UI[k] == null) continue; const d = UI[t] - UI[k]; if (Math.abs(d) < 1) UI[k] = UI[t]; else UI[k] += d * Math.min(1, dt * 7) + Math.sign(d) * .5; const el = $(id); if (el) el.textContent = fmt(UI[k]); } }
 function frame(ms) {
   const t = ms / 1000, dt = Math.min(.1, t - lastT); lastT = t;
-  if (G.screen === "match") { Match.frame(t, dt); }
+  if (G.screen === "match") { try { Match.frame(t, dt); } catch (err) { console.error(err); } }
   else { tickNums(dt); drawBg(t); if (G.screen === "lobby") drawHero(t, dt); if (UI.look && $("lookCv")) drawLook(t); if (G.dropAnim) G.dropAnim(t, dt); if (G.screen === "auth") { const ad = $("authDrop"); if (ad) { const c = ad.getContext("2d"); c.clearRect(0, 0, 256, 256); drawDrop(c, { ...DEFAULT_COS, hat: "hat_party" }, 128, 140, 150, t, {}); } } }
   requestAnimationFrame(frame);
 }
@@ -1445,7 +1445,7 @@ const Match = (() => {
     if (!S || S.ended || S.left) return;
     const ws = new WebSocket(wsBase() + "/ws/match?id=" + encodeURIComponent(S.id) + "&u=" + encodeURIComponent(G.user.name) + "&t=" + encodeURIComponent(G.user.token)); S.ws = ws;
     ws.onopen = () => { S.tries = 0; S.err = ""; };
-    ws.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch { return; } onMsg(m); };
+    ws.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch { return; } try { onMsg(m); } catch (err) { console.error(err); } };
     ws.onclose = () => { if (!S || S.ws !== ws || S.ended || S.left) return; S.err = "Verbindung weg … versuche es erneut"; if (++S.tries > 25) { toast("Die Verbindung zum Match ist abgebrochen.", true); toBack(); return; } setTimeout(connect, 1200); };
     ws.onerror = () => {};
   }
@@ -1490,7 +1490,7 @@ const Match = (() => {
   }
   function posOf(id, rt) {
     if (id === S.you) return S.cur ? { x: S.cur.x, y: S.cur.y, f: IN.lastAng, vis: true } : null;
-    const e = S.pl.get(id); if (!e || !e.vis || !e.last) return null; const h = e.hist; let a = h[0], b = h[h.length - 1];
+    const e = S.pl.get(id); if (!e || !e.vis || !e.last || !e.hist.length) return null; const h = e.hist; let a = h[0], b = h[h.length - 1];
     for (let i = h.length - 1; i > 0; i--) if (h[i - 1].t <= rt) { a = h[i - 1]; b = h[i]; break; }
     if (rt <= h[0].t) return { x: h[0].x, y: h[0].y, f: h[0].f, vx: h[0].vx, vy: h[0].vy, hp: h[0].hp, mhp: h[0].mhp, fl: h[0].fl, vis: true };
     const k = b.t === a.t ? 1 : clampN((rt - a.t) / (b.t - a.t), 0, 1.3);
@@ -1516,7 +1516,7 @@ const Match = (() => {
       case "bh": S.bucketHit[ev.t] = .4; break;
       case "m": S.banner = { s: ev.t, t: 0, d: 2.2 }; break;
       case "e": S.emotes.push({ id: ev.id, n: ev.n, t: 0 }); sfx("emote"); break;
-      case "rs": { S.M = cloneMap(S.base); S.world = buildWorld(S.M); S.cur = null; S.pending.length = 0; S.me.first = true; for (const e of S.pl.values()) { e.hist.length = 0; } break; }
+      case "rs": { S.M = cloneMap(S.base); S.world = buildWorld(S.M); S.cur = null; S.pending.length = 0; S.me.first = true; break; }
     }
   }
   function onEnd(m) {
