@@ -210,7 +210,7 @@ const DAILY_COINS = [100, 150, 200, 250, 300, 400];   // Tag 7: 1 Gem + Gewöhnl
 const QUEST_POOL = [
   { id: "play", n: "Spiele {n} Matches", need: [3, 4, 5], coins: 150 },
   { id: "win", n: "Gewinne {n} Match", need: [1, 2], coins: 250, drop: 0 },
-  { id: "kills", n: "Besiege {n} Gegner", need: [5, 8], coins: 200 },
+  { id: "kills", n: "Spritze {n} Gegner nass", need: [5, 8], coins: 200 },
   { id: "dmg", n: "Verursache {n} Schaden", need: [6000, 9000], coins: 180 },
   { id: "top", n: "Erreiche {n}x die Top 2 im Showdown", need: [1, 2], coins: 220 }
 ];

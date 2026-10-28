@@ -76,7 +76,7 @@ const Match = (() => {
     switch (ev.e) {
       case "f": { const p = posOf(ev.id, now - INTERP) || (S.cur && ev.id === S.you ? S.cur : null); if (!p) break; const o = S.pl.get(ev.id); if (o) o.fire = now; splash(p.x + Math.cos(ev.a) * 18, p.y + Math.sin(ev.a) * 18, 5, "#bfe9ff", 80); if (ev.id === S.you || near(p.x, p.y)) sfx(ev.s ? "sup" : "shoot", ev.w); break; }
       case "h": { const mine = ev.s === S.you, hurt = ev.v === S.you; S.texts.push({ x: ev.x + (Math.random() - .5) * 10, y: ev.y - 14, t: 0, s: String(ev.a), c: hurt ? "#ff5a4f" : mine ? "#ffe45e" : "#fff", big: mine ? 1.25 : 1 }); const o = S.pl.get(ev.v); if (o) o.hit = 1; if (hurt) sfx("hurt"); else if (mine || near(ev.x, ev.y)) sfx("hit"); splash(ev.x, ev.y, 4, "#bfe9ff", 70); break; }
-      case "k": { splash(ev.x, ev.y, 26, "#bfe9ff", 190); S.parts.push({ ring: 1, x: ev.x, y: ev.y, t: 0, life: .5, r: 60, c: "#9fd8f5" }); sfx("ko"); S.feed.unshift({ t: 0, s: (ev.k >= 0 ? name(ev.k) + " besiegt " : "") + name(ev.v) + (ev.k < 0 ? " ist raus" : ""), me: ev.k === S.you || ev.v === S.you }); if (S.feed.length > 4) S.feed.pop(); if (ev.k === S.you) S.banner = { s: "Besiegt: " + name(ev.v), t: 0, d: 1.6, small: 1 }; break; }
+      case "k": { splash(ev.x, ev.y, 26, "#bfe9ff", 190); S.parts.push({ ring: 1, x: ev.x, y: ev.y, t: 0, life: .5, r: 60, c: "#9fd8f5" }); sfx("ko"); S.feed.unshift({ t: 0, s: (ev.k >= 0 ? name(ev.k) + " macht " + name(ev.v) + " nass" : name(ev.v) + " ist raus"), me: ev.k === S.you || ev.v === S.you }); if (S.feed.length > 4) S.feed.pop(); if (ev.k === S.you) S.banner = { s: "Nass gemacht: " + name(ev.v), t: 0, d: 1.6, small: 1 }; break; }
       case "x": { S.parts.push({ ring: 1, x: ev.x, y: ev.y, t: 0, life: .45, r: ev.r, c: ev.k === 2 ? "#6be28a" : ev.ic ? "#e6f8ff" : ev.k === 4 ? "#5fa8ff" : "#8ad4ff", fill: 1 }); splash(ev.x, ev.y, 12 + (ev.r / 8 | 0), ev.k === 2 ? "#b4f5c4" : "#bfe9ff", ev.r * 2.4); if (near(ev.x, ev.y)) sfx("splash"); break; }
       case "su": { const p = posOf(ev.id, now - INTERP); if (p) { S.parts.push({ ring: 1, x: p.x, y: p.y, t: 0, life: .6, r: 70, c: "#ffd23f" }); } break; }
       case "a": { const p = posOf(ev.id, now - INTERP); if (p) { S.texts.push({ x: p.x, y: p.y - 34, t: 0, s: AB[ev.ab].n, c: "#d7ecff", big: .9 }); } if (ev.id === S.you || (p && near(p.x, p.y))) sfx("ability"); break; }
@@ -93,12 +93,12 @@ const Match = (() => {
   function onEnd(m) {
     if (!S || S.ended) return; S.ended = true; S.end = m; try { localStorage.removeItem("ws_match"); } catch (e) {}
     const p = S.players[S.you], won = S.ffa ? m.win === S.you : m.win === S.myTeam, draw = m.win === -1; sfx(won ? "win" : "lose");
-    S.banner = { s: won ? "Gewonnen!" : draw ? "Unentschieden" : "Verloren", t: 0, d: 2.6 };
+    S.banner = { s: won ? "Gewonnen!" : draw ? "Unentschieden" : "Diesmal nicht gewonnen", t: 0, d: 2.6 };
     setTimeout(() => { if (S && S.end === m) showResult(m); }, 2300);
   }
   function showResult(m) {
     const you = S.you, tb = m.table, mine = tb.find(r => r.id === you), won = S.ffa ? m.win === you : m.win === S.myTeam, draw = m.win === -1, rw = m.rewards;
-    const title = draw ? "Unentschieden" : S.ffa ? (won ? "Sieg!" : "Platz " + (mine ? mine.pl : "?")) : won ? "Sieg!" : "Niederlage";
+    const title = draw ? "Unentschieden" : S.ffa ? (won ? "Sieg!" : "Platz " + (mine ? mine.pl : "?")) : won ? "Sieg!" : "Nicht gewonnen";
     const rows = [...tb].sort((a, b) => S.ffa ? (a.pl || 9) - (b.pl || 9) : a.tm - b.tm || b.k - a.k).map(r => `<tr class="${r.id === you ? "me" : ""}"><td>${S.ffa ? (r.pl || "-") + "." : `<i style="display:inline-block;width:.8rem;height:.8rem;border-radius:50%;background:${TEAMC[r.tm]};border:2px solid var(--ink)"></i>`}</td><td>${esc(r.n)}${r.h ? "" : " <small>(Bot)</small>"}</td><td>${r.k}</td><td>${fmt(r.d)}</td></tr>`).join("");
     let rew = ""; if (rw) {
       rew = `<div class="rew"><span>${coinH(rw.coins)}</span><span>+${rw.xp} EP</span>${rw.lvAfter > rw.lvBefore ? `<span style="color:var(--accent)">Level ${rw.lvAfter}! ${coinH(rw.lvCoins)}${rw.lvGems ? " " + gemH(rw.lvGems) : ""}</span>` : ""}</div>`;
@@ -106,15 +106,15 @@ const Match = (() => {
       if (rw.drop >= 0) rew += `<div style="text-align:center;font:1.3rem var(--f-display)">Du hast einen ${DROPS[rw.drop].n} bekommen! Du findest ihn unter Fähigkeiten.</div>`;
       if (rw.gemFind) rew += `<div style="text-align:center;font:1.3rem var(--f-display)">Glückstreffer: ${gemH(1)}</div>`;
     } else rew = `<div class="muted" style="text-align:center">Die Belohnung konnte nicht abgeholt werden.</div>`;
-    const d = document.createElement("div"); d.id = "result"; d.innerHTML = `<div class="box panel"><h1 class="${won ? "good" : ""}">${title}</h1><table><tr><th></th><th>Name</th><th>Besiegt</th><th>Schaden</th></tr>${rows}</table>${rew}<div style="text-align:center;margin-top:.6rem"><button class="btn go" id="resOk">Weiter</button></div></div>`;
+    const d = document.createElement("div"); d.id = "result"; d.innerHTML = `<div class="box panel"><h1 class="${won ? "good" : ""}">${title}</h1><table><tr><th></th><th>Name</th><th>Nass gemacht</th><th>Schaden</th></tr>${rows}</table>${rew}<div style="text-align:center;margin-top:.6rem"><button class="btn go" id="resOk">Weiter</button></div></div>`;
     document.body.appendChild(d); $("resOk").onclick = () => { sfx("click"); toBack(); };
   }
 
   /* ---------- Eingabe ---------- */
   let bound = false;
   function lay() {
-    VW = innerWidth; VH = innerHeight; const R = clampN(VH * .17, 50, 80), aim = { x: VW - R - 30 - (innerWidth > 900 ? 10 : 0), y: VH - R - 24, r: R }, rs = R * .62;
-    return { R, aim, sup: { x: aim.x - R - rs - 14, y: aim.y + R * .28, r: rs }, ab: { x: aim.x - R * .62, y: aim.y - R - rs * .85 - 16, r: rs * .8 }, rm: 54, pause: { x: VW - 34, y: 34, r: 24 }, emo: { x: VW - 34, y: 34 + 54, r: 22 } };
+    VW = innerWidth; VH = innerHeight; const R = clampN(VH * .21, 60, 96), aim = { x: VW - R - 30 - (innerWidth > 900 ? 10 : 0), y: VH - R - 24, r: R }, rs = R * .62;
+    return { R, aim, sup: { x: aim.x - R - rs - 14, y: aim.y + R * .28, r: rs }, ab: { x: aim.x - R * .62, y: aim.y - R - rs * .85 - 16, r: rs * .8 }, rm: 64, pause: { x: VW - 34, y: 34, r: 24 }, emo: { x: VW - 34, y: 34 + 54, r: 22 } };
   }
   function bindInput() {
     if (bound) return; bound = true;
@@ -163,7 +163,7 @@ const Match = (() => {
   function moveVec() {
     const k = IN.keys; let x = (k.d || k.arrowright ? 1 : 0) - (k.a || k.arrowleft ? 1 : 0), y = (k.s || k.arrowdown ? 1 : 0) - (k.w || k.arrowup ? 1 : 0);
     if (x || y) { const l = Math.hypot(x, y); return { x: x / l, y: y / l }; }
-    if (IN.mv.id != null) { const dx = IN.mv.x - IN.mv.ox, dy = IN.mv.y - IN.mv.oy, l = Math.hypot(dx, dy), R = 54; if (l < 7) return { x: 0, y: 0 }; const m = Math.min(1, l / R); return { x: dx / l * m, y: dy / l * m }; }
+    if (IN.mv.id != null) { const dx = IN.mv.x - IN.mv.ox, dy = IN.mv.y - IN.mv.oy, l = Math.hypot(dx, dy), R = 64; if (l < 7) return { x: 0, y: 0 }; const m = Math.min(1, l / R); return { x: dx / l * m, y: dy / l * m }; }
     return { x: 0, y: 0 };
   }
   function emoteHit(x, y) { for (let i = 0; i < EMOTE_N; i++) { const p = emotePos(i); if (Math.hypot(x - p.x, y - p.y) < 24) return i; } return -1; }
@@ -173,7 +173,7 @@ const Match = (() => {
     if (!S || S.pause || S.ended) return; S.pause = true; let sure = false;
     const d = document.createElement("div"); d.id = "pause"; d.innerHTML = `<div class="box panel"><h2>Pause</h2><p class="muted">Das Match läuft weiter, du stehst solange still.</p><div class="tabs" style="justify-content:center"><button class="btn good" id="pCont">Weiter</button><button class="btn warn" id="pLeave">Match verlassen</button></div></div>`;
     document.body.appendChild(d); $("pCont").onclick = () => { sfx("click"); d.remove(); S.pause = false; };
-    $("pLeave").onclick = () => { if (!sure) { sure = true; $("pLeave").textContent = "Wirklich? Das zählt als Niederlage."; sfx("err"); return; } d.remove(); S.left = true; send({ t: "leave" }); setTimeout(() => { if (S && S.left) toBack(); }, 1500); };
+    $("pLeave").onclick = () => { if (!sure) { sure = true; $("pLeave").textContent = "Wirklich? Du bekommst weniger Belohnung."; sfx("err"); return; } d.remove(); S.left = true; send({ t: "leave" }); setTimeout(() => { if (S && S.left) toBack(); }, 1500); };
   }
 
   /* ---------- Hauptschleife ---------- */
@@ -333,7 +333,7 @@ const Match = (() => {
     if (md === "perlen" || me.cu) { const parts = []; if (md === "perlen") parts.push("Perlen: " + me.pr); if (me.cu) parts.push("Kraft: " + me.cu); txt(c, parts.join("   "), VW / 2, VH - 68, 17, "#ffe9a8"); }
     // Zähler und Hinweise
     if (S.ph > 0) { S.sawCount = true; const k = (now * 1) % 1; txt(c, String(S.ph), VW / 2, VH * .38, 120 - k * 20, "#fff"); txt(c, S.md.n, VW / 2, VH * .22, 38, "#ffe45e"); } else if (S.sawCount && !S.sounded) { S.sounded = 1; sfx("go"); }
-    if (!me.al && !S.ended) { if (me.rs > 0) txt(c, "Zurück in " + Math.ceil(me.rs), VW / 2, VH * .4, 40, "#fff"); else if (me.sd) { txt(c, "Du bist raus – du schaust zu", VW / 2, VH * .25, 30, "#fff"); txt(c, "Tippe, um die Ansicht zu wechseln", VW / 2, VH * .25 + 30, 18, "#ffe9a8"); } }
+    if (!me.al && !S.ended) { if (me.rs > 0) txt(c, "Zurück in " + Math.ceil(me.rs), VW / 2, VH * .4, 40, "#fff"); else if (me.sd) { txt(c, "Du bist nass – schau zu", VW / 2, VH * .25, 30, "#fff"); txt(c, "Tippe, um die Ansicht zu wechseln", VW / 2, VH * .25 + 30, 18, "#ffe9a8"); } }
     if (S.banner) { const b = S.banner; b.t += dt; const k = Math.min(1, b.t * 5), a = b.t > b.d - .4 ? Math.max(0, (b.d - b.t) / .4) : 1; if (b.t > b.d) S.banner = null; else { c.globalAlpha = a; txt(c, b.s, VW / 2, b.small ? VH * .3 : VH * .36, (b.small ? 28 : 52) * (.6 + .4 * k), "#ffe45e"); c.globalAlpha = 1; } }
     if (S.err) txt(c, S.err, VW / 2, VH * .55, 24, "#ffb4a8");
   }
