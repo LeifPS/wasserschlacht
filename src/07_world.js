@@ -51,6 +51,10 @@ function buildWorld(M) {
   k.stroke();
   // Farblose Kachelfugen (hauchdünn)
   c.strokeStyle = "rgba(29,39,66,.09)"; c.lineWidth = 1.2; k.beginPath(); for (let i = 1; i < M.w; i++) { k.moveTo(i * TS, 0); k.lineTo(i * TS, H2); } for (let j = 1; j < M.h; j++) { k.moveTo(0, j * TS); k.lineTo(W2, j * TS); } k.stroke();
+  // Weiche Schatten unter Felsen und Kisten
+  c.save(); c.shadowColor = "rgba(20,35,70,.45)"; c.shadowBlur = 7; c.shadowOffsetX = 3; c.shadowOffsetY = 5; c.fillStyle = "rgba(20,35,70,.5)";
+  for (let ty = 0; ty < M.h; ty++) for (let tx = 0; tx < M.w; tx++) { const t = tl(tx, ty); if (t === T_WALL || t === T_CRATE) c.fillRect(tx * TS + 3, ty * TS + 6, TS - 4, TS - 8); }
+  c.restore();
   // Sprites
   const wall = [0, 1, 2].map(v => mkSprite(TS + 4, TS + 13, 2, 11, c2 => {
     const kk = sketchCtx(c2, 4 + v, TS * 1.3); c2.lineWidth = 2.2;
@@ -102,3 +106,15 @@ function drawEmote(c, n, x, y, s) {
   c.restore();
 }
 const EMOTE_N = 8;
+
+/* ----- Papier-Schilder für die Oberfläche ----- */
+function plaque(c, x, y, w, h, fill, rot) {
+  c.save(); if (rot) { c.translate(x + w / 2, y + h / 2); c.rotate(rot); c.translate(-w / 2 - x, -h / 2 - y); }
+  c.lineJoin = c.lineCap = "round"; c.lineWidth = 3; c.strokeStyle = INK;
+  c.fillStyle = INK; c.beginPath(); c.rect(x + 3, y + 4, w, h); c.fill();
+  c.fillStyle = fill || "#f6efd9"; c.beginPath(); c.rect(x, y, w, h); c.fill(); c.stroke();
+  c.fillStyle = "rgba(255,255,255,.4)"; c.beginPath(); c.rect(x + 4, y + 3, w - 8, Math.max(3, h * .22)); c.fill();
+  c.restore();
+}
+function ptxt(c, s, x, y, size, col, align) { c.font = size + "px 'Caveat Brush','Patrick Hand',cursive"; c.textAlign = align || "center"; c.textBaseline = "middle"; c.fillStyle = col || INK; c.fillText(s, x, y); }
+function tw(c, s, size) { c.font = size + "px 'Caveat Brush','Patrick Hand',cursive"; return c.measureText(s).width; }

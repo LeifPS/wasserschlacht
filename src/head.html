@@ -133,6 +133,11 @@ h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0}
 /* Ergebnis */
 #result{position:fixed;inset:0;z-index:30;background:rgba(15,40,70,.78);display:flex;align-items:center;justify-content:center;overflow:auto;padding:.5rem}
 #result .box{width:min(96vw,44rem);padding:.7rem 1rem;display:grid;gap:.5rem}
+.confetti{position:absolute;inset:0;overflow:hidden;pointer-events:none}.confetti i{position:absolute;top:-12px;width:9px;height:14px;border:1.5px solid var(--ink);border-radius:2px;animation:cfall linear infinite}
+@keyframes cfall{to{transform:translateY(110vh) rotate(720deg)}}
+#result .box{animation:winin .35s ease-out}
+.btn.go{animation:pulse 2.2s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.04)}}
 #result h1{font-size:3.4rem;text-align:center;line-height:1}
 #result h1.win{color:#e6a400;text-shadow:2px 2px 0 var(--ink)}
 #result h1.lose{color:var(--accent)}

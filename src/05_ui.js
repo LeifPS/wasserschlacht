@@ -65,6 +65,7 @@ function drawBg(t) {
     c.strokeStyle = "rgba(29,39,66,.35)"; c.lineWidth = Math.max(2, h * .006); c.stroke();
     c.strokeStyle = "rgba(255,255,255,.35)"; c.lineWidth = Math.max(1, h * .003); c.beginPath(); for (let x = 0; x <= w + 20; x += 20) c.lineTo(x, y0 - h * .006 + Math.sin(x / (w * .09) + t * sp + i + .3) * amp); c.stroke();
   }
+  for (let i = 0; i < 4; i++) { const a = -.5 + i * .35 + Math.sin(t * .15 + i) * .06, g = c.createLinearGradient(w * (.1 + i * .22), 0, w * (.1 + i * .22) + Math.sin(a) * h, h); g.addColorStop(0, "rgba(255,255,255,.16)"); g.addColorStop(1, "rgba(255,255,255,0)"); c.fillStyle = g; c.beginPath(); c.moveTo(w * (.05 + i * .22), 0); c.lineTo(w * (.14 + i * .22), 0); c.lineTo(w * (.14 + i * .22) + Math.sin(a) * h * 1.6, h); c.lineTo(w * (.05 + i * .22) + Math.sin(a) * h * 1.6, h); c.closePath(); c.fill(); }
   for (const b of BG.bub) { const y = ((b.y - t * b.v) % 1 + 1) % 1, x = b.x + Math.sin(t * .8 + b.ph) * .01; c.beginPath(); c.arc(x * w, y * h, b.r * dpr * .6, 0, 7); c.fillStyle = "rgba(255,255,255,.18)"; c.fill(); c.strokeStyle = "rgba(255,255,255,.7)"; c.lineWidth = Math.max(1.5, dpr * 1.5); c.stroke(); c.beginPath(); c.arc(x * w - b.r * dpr * .2, y * h - b.r * dpr * .2, b.r * dpr * .15, 0, 7); c.fillStyle = "rgba(255,255,255,.8)"; c.fill(); }
 }
 function drawHero(t, dt) {
@@ -75,6 +76,7 @@ function drawHero(t, dt) {
   if (tr && tr.id !== "trail_none" && Math.random() < dt * 8) hp.push({ x: w / 2 + (Math.random() - .5) * s * .6, y: h * .62 + s * .3, vx: (Math.random() - .5) * 20, vy: -20 - Math.random() * 40, t: 0, k: tr.id, i: Math.floor(Math.random() * 7) });
   c.save(); c.translate(0, 0);
   for (let i = hp.length - 1; i >= 0; i--) { const p = hp[i]; p.t += dt; p.x += p.vx * dt * dpr; p.y += p.vy * dt * dpr; if (p.t > 1.4) { hp.splice(i, 1); continue; } c.globalAlpha = 1 - p.t / 1.4; trailDot(c, p.k, p.x, p.y, s * .06, p.i, t); } c.restore(); c.globalAlpha = 1;
+  for (let i = 0; i < 2; i++) { const k = ((t * .5 + i * .5) % 1); c.strokeStyle = `rgba(255,255,255,${.55 * (1 - k)})`; c.lineWidth = 3 * dpr; c.beginPath(); c.ellipse(w / 2, h * .56 + s * .6, s * (.3 + k * .35), s * (.3 + k * .35) * .22, 0, 0, TAU); c.stroke(); }
   drawDrop(c, cos, w / 2, h * .56, s, t, { weapon: G.P.eqW, skin: cos.skin, aim: .25 + Math.sin(t * .7) * .2 });
 }
 function trailDot(c, k, x, y, r, i, t) {
