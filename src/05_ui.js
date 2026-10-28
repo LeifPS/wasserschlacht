@@ -38,7 +38,7 @@ async function tryAutoLogin() {
 function refreshHud() {
   const P = G.P; if (!P) return;
   $("meName").textContent = P.name; $("meLv").textContent = "Lv " + P.lvl; $("meXp").style.width = Math.round(100 * P.xpInto / P.xpNeed) + "%";
-  $("curCoins").textContent = fmt(P.coins); $("curGems").textContent = fmt(P.gems);
+  UI.tc = P.coins; UI.tg = P.gems; if (UI.dc == null) { UI.dc = P.coins; UI.dg = P.gems; }
   $("icoCoin").style.backgroundImage = `url(${iconURL("coin", "c", 48)})`; $("icoGem").style.backgroundImage = `url(${iconURL("gem", "g", 48)})`;
   const dots = { shop: 0, abil: P.drops.reduce((a, b) => a + b, 0), weap: 0, look: 0, quest: (P.daily.canClaim ? 1 : 0) + P.q.list.filter(q => !q.claimed && q.have >= q.need).length };
   document.querySelectorAll("#nav .btn").forEach(b => { const d = b.querySelector(".dot"), n = dots[b.dataset.id] || 0; if (d) { d.textContent = n; d.hidden = !n; } });
@@ -203,7 +203,7 @@ function winQuest() {
     const P = G.P, d = P.daily, streak = d.canClaim ? d.next : d.streak, rk = RANKS[P.rank.tier], nx = RANKS[P.rank.tier + 1];
     const days = Array.from({ length: 7 }, (_, i) => { const done = d.canClaim ? i < d.next && d.next > 0 && (d.claimedDay === P.day - 1 || i < d.next) : i <= d.streak; return `<div class="day ${d.canClaim && i === d.next ? "now" : ""} ${!d.canClaim && i <= d.streak ? "done" : ""}"><b>Tag ${i + 1}</b><br>${i < 6 ? coinH(DAILY_COINS[i]) : gemH(1) + "<br><small>+ Drop</small>"}</div>`; }).join("");
     const qs = P.q.list.map((q, i) => { const def = QUEST_POOL.find(x => x.id === q.id), ready = q.have >= q.need && !q.claimed; return `<div class="qrow"><div class="grow"><b>${def.n.replace("{n}", q.need)}</b><div class="bar" style="margin:.25rem 0"><i style="width:${100 * q.have / q.need}%"></i></div><span class="muted">${fmt(q.have)} / ${fmt(q.need)}</span></div><div>${coinH(q.coins)}${q.drop >= 0 ? `<br><small>+ ${DROPS[q.drop].n}</small>` : ""}</div><button class="btn good" data-a="cq" data-id="${i}" ${ready ? "" : "disabled"}>${q.claimed ? "Geholt" : "Abholen"}</button></div>`; }).join("");
-    return `<div class="sect" style="margin-top:0">Tägliche Belohnung</div><div class="days">${days}</div><div style="text-align:center;margin:.5rem 0"><button class="btn good" data-a="cd" ${d.canClaim ? "" : "disabled"}>${d.canClaim ? "Heute abholen" : "Morgen wieder"}</button></div><div class="sect">Heutige Aufgaben</div>${qs}<div class="sect">Deine Zahlen</div><div class="stat"><span>Matches</span><b>${P.stats.matches}</b></div><div class="stat"><span>Siege</span><b>${P.stats.wins}</b></div><div class="stat"><span>Nass gemachte Gegner</span><b>${fmt(P.stats.kills)}</b></div><div class="stat"><span>Schaden gesamt</span><b>${fmt(P.stats.dmg)}</b></div><div class="stat"><span>Rang</span><b>${rk.n} (${P.rank.rp} RP)${nx ? " · nächster bei " + nx.rp : ""}</b></div>`;
+    return `<div class="sect" style="margin-top:0">Tägliche Belohnung</div><div class="days">${days}</div><div style="text-align:center;margin:.5rem 0"><button class="btn good" data-a="cd" ${d.canClaim ? "" : "disabled"}>${d.canClaim ? "Heute abholen" : "Morgen wieder"}</button></div><div class="sect">Heutige Aufgaben</div>${qs}<div class="sect">Deine Zahlen</div><div class="stat"><span>Matches</span><b>${P.stats.matches}</b></div><div class="stat"><span>Siege</span><b>${P.stats.wins}</b></div><div class="stat"><span>Besiegte Gegner</span><b>${fmt(P.stats.kills)}</b></div><div class="stat"><span>Schaden gesamt</span><b>${fmt(P.stats.dmg)}</b></div><div class="stat"><span>Rang</span><b>${rk.n} (${P.rank.rp} RP)${nx ? " · nächster bei " + nx.rp : ""}</b></div>`;
   }, async (a, id) => {
     if (a === "cd") { const r = await doAct("claimDaily"); if (r.ok) { sfx("coin"); toast(r.reward.gems ? "1 Gem und ein Drop!" : "+" + r.reward.coins + " Münzen"); } }
     else if (a === "cq") { const r = await doAct("claimQuest", { i: +id }); if (r.ok) { sfx("coin"); toast("+" + r.reward.coins + " Münzen" + (r.reward.drop >= 0 ? " und ein Drop" : "")); } }
@@ -266,9 +266,10 @@ function bindLobby() {
   const ad = $("authDrop"); drawDrop(ad.getContext("2d"), { ...DEFAULT_COS, hat: "hat_party" }, 128, 140, 150, 1, {});
 }
 let lastT = 0;
+function tickNums(dt) { for (const [k, t, id] of [["dc", "tc", "curCoins"], ["dg", "tg", "curGems"]]) { if (UI[k] == null) continue; const d = UI[t] - UI[k]; if (Math.abs(d) < 1) UI[k] = UI[t]; else UI[k] += d * Math.min(1, dt * 7) + Math.sign(d) * .5; const el = $(id); if (el) el.textContent = fmt(UI[k]); } }
 function frame(ms) {
   const t = ms / 1000, dt = Math.min(.1, t - lastT); lastT = t;
   if (G.screen === "match") { Match.frame(t, dt); }
-  else { drawBg(t); if (G.screen === "lobby") drawHero(t, dt); if (UI.look && $("lookCv")) drawLook(t); if (G.dropAnim) G.dropAnim(t, dt); if (G.screen === "auth") { const ad = $("authDrop"); if (ad) { const c = ad.getContext("2d"); c.clearRect(0, 0, 256, 256); drawDrop(c, { ...DEFAULT_COS, hat: "hat_party" }, 128, 140, 150, t, {}); } } }
+  else { tickNums(dt); drawBg(t); if (G.screen === "lobby") drawHero(t, dt); if (UI.look && $("lookCv")) drawLook(t); if (G.dropAnim) G.dropAnim(t, dt); if (G.screen === "auth") { const ad = $("authDrop"); if (ad) { const c = ad.getContext("2d"); c.clearRect(0, 0, 256, 256); drawDrop(c, { ...DEFAULT_COS, hat: "hat_party" }, 128, 140, 150, t, {}); } } }
   requestAnimationFrame(frame);
 }

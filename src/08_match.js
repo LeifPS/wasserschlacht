@@ -56,7 +56,7 @@ const Match = (() => {
       if (!cu || me.first || Math.hypot(q.x - cu.x, q.y - cu.y) > 48) S.cur = { x: q.x, y: q.y }; else { cu.x += (q.x - cu.x) * .35; cu.y += (q.y - cu.y) * .35; }
     } else { S.pending.length = 0; if (!S.cur || me.first || Math.hypot(me.x - S.cur.x, me.y - S.cur.y) > 6) S.cur = { x: me.x, y: me.y }; else { S.cur.x += (me.x - S.cur.x) * .5; S.cur.y += (me.y - S.cur.y) * .5; } }
     me.first = false;
-    if (me.hp < prevHp && prevHp > 0 && me.al) S.shake = Math.min(7, S.shake + 2 + (prevHp - me.hp) / 120);
+    if (me.hp < prevHp && prevHp > 0 && me.al) { S.shake = Math.min(7, S.shake + 2 + (prevHp - me.hp) / 200); S.hurtV = 1; try { navigator.vibrate && navigator.vibrate(25); } catch (e) {} }
     for (const ev of m.ev) onEvent(ev, now);
   }
   function posOf(id, rt) {
@@ -76,7 +76,7 @@ const Match = (() => {
     switch (ev.e) {
       case "f": { const p = posOf(ev.id, now - INTERP) || (S.cur && ev.id === S.you ? S.cur : null); if (!p) break; const o = S.pl.get(ev.id); if (o) o.fire = now; splash(p.x + Math.cos(ev.a) * 18, p.y + Math.sin(ev.a) * 18, 5, "#bfe9ff", 80); if (ev.id === S.you || near(p.x, p.y)) sfx(ev.s ? "sup" : "shoot", ev.w); break; }
       case "h": { const mine = ev.s === S.you, hurt = ev.v === S.you; S.texts.push({ x: ev.x + (Math.random() - .5) * 10, y: ev.y - 14, t: 0, s: String(ev.a), c: hurt ? "#ff5a4f" : mine ? "#ffe45e" : "#fff", big: mine ? 1.25 : 1 }); const o = S.pl.get(ev.v); if (o) o.hit = 1; if (hurt) sfx("hurt"); else if (mine || near(ev.x, ev.y)) sfx("hit"); splash(ev.x, ev.y, 4, "#bfe9ff", 70); break; }
-      case "k": { splash(ev.x, ev.y, 26, "#bfe9ff", 190); S.parts.push({ ring: 1, x: ev.x, y: ev.y, t: 0, life: .5, r: 60, c: "#9fd8f5" }); sfx("ko"); S.feed.unshift({ t: 0, s: (ev.k >= 0 ? name(ev.k) + " macht " + name(ev.v) + " nass" : name(ev.v) + " ist raus"), me: ev.k === S.you || ev.v === S.you }); if (S.feed.length > 4) S.feed.pop(); if (ev.k === S.you) S.banner = { s: "Nass gemacht: " + name(ev.v), t: 0, d: 1.6, small: 1 }; break; }
+      case "k": { splash(ev.x, ev.y, 26, "#bfe9ff", 190); S.parts.push({ ring: 1, x: ev.x, y: ev.y, t: 0, life: .5, r: 60, c: "#9fd8f5" }); sfx("ko"); S.feed.unshift({ t: 0, s: (ev.k >= 0 ? name(ev.k) + " besiegt " : "") + name(ev.v) + (ev.k < 0 ? " ist raus" : ""), me: ev.k === S.you || ev.v === S.you }); if (S.feed.length > 4) S.feed.pop(); if (ev.k === S.you) S.banner = { s: "Besiegt: " + name(ev.v), t: 0, d: 1.6, small: 1 }; break; }
       case "x": { S.parts.push({ ring: 1, x: ev.x, y: ev.y, t: 0, life: .45, r: ev.r, c: ev.k === 2 ? "#6be28a" : ev.ic ? "#e6f8ff" : ev.k === 4 ? "#5fa8ff" : "#8ad4ff", fill: 1 }); splash(ev.x, ev.y, 12 + (ev.r / 8 | 0), ev.k === 2 ? "#b4f5c4" : "#bfe9ff", ev.r * 2.4); if (near(ev.x, ev.y)) sfx("splash"); break; }
       case "su": { const p = posOf(ev.id, now - INTERP); if (p) { S.parts.push({ ring: 1, x: p.x, y: p.y, t: 0, life: .6, r: 70, c: "#ffd23f" }); } break; }
       case "a": { const p = posOf(ev.id, now - INTERP); if (p) { S.texts.push({ x: p.x, y: p.y - 34, t: 0, s: AB[ev.ab].n, c: "#d7ecff", big: .9 }); } if (ev.id === S.you || (p && near(p.x, p.y))) sfx("ability"); break; }
@@ -93,12 +93,12 @@ const Match = (() => {
   function onEnd(m) {
     if (!S || S.ended) return; S.ended = true; S.end = m; try { localStorage.removeItem("ws_match"); } catch (e) {}
     const p = S.players[S.you], won = S.ffa ? m.win === S.you : m.win === S.myTeam, draw = m.win === -1; sfx(won ? "win" : "lose");
-    S.banner = { s: won ? "Gewonnen!" : draw ? "Unentschieden" : "Diesmal nicht gewonnen", t: 0, d: 2.6 };
+    S.banner = { s: won ? "Gewonnen!" : draw ? "Unentschieden" : "Verloren", t: 0, d: 2.6 };
     setTimeout(() => { if (S && S.end === m) showResult(m); }, 2300);
   }
   function showResult(m) {
     const you = S.you, tb = m.table, mine = tb.find(r => r.id === you), won = S.ffa ? m.win === you : m.win === S.myTeam, draw = m.win === -1, rw = m.rewards;
-    const title = draw ? "Unentschieden" : S.ffa ? (won ? "Sieg!" : "Platz " + (mine ? mine.pl : "?")) : won ? "Sieg!" : "Nicht gewonnen";
+    const title = draw ? "Unentschieden" : S.ffa ? (won ? "Sieg!" : "Platz " + (mine ? mine.pl : "?")) : won ? "Sieg!" : "Niederlage";
     const rows = [...tb].sort((a, b) => S.ffa ? (a.pl || 9) - (b.pl || 9) : a.tm - b.tm || b.k - a.k).map(r => `<tr class="${r.id === you ? "me" : ""}"><td>${S.ffa ? (r.pl || "-") + "." : `<i style="display:inline-block;width:.8rem;height:.8rem;border-radius:50%;background:${TEAMC[r.tm]};border:2px solid var(--ink)"></i>`}</td><td>${esc(r.n)}${r.h ? "" : " <small>(Bot)</small>"}</td><td>${r.k}</td><td>${fmt(r.d)}</td></tr>`).join("");
     let rew = ""; if (rw) {
       rew = `<div class="rew"><span>${coinH(rw.coins)}</span><span>+${rw.xp} EP</span>${rw.lvAfter > rw.lvBefore ? `<span style="color:var(--accent)">Level ${rw.lvAfter}! ${coinH(rw.lvCoins)}${rw.lvGems ? " " + gemH(rw.lvGems) : ""}</span>` : ""}</div>`;
@@ -106,7 +106,7 @@ const Match = (() => {
       if (rw.drop >= 0) rew += `<div style="text-align:center;font:1.3rem var(--f-display)">Du hast einen ${DROPS[rw.drop].n} bekommen! Du findest ihn unter Fähigkeiten.</div>`;
       if (rw.gemFind) rew += `<div style="text-align:center;font:1.3rem var(--f-display)">Glückstreffer: ${gemH(1)}</div>`;
     } else rew = `<div class="muted" style="text-align:center">Die Belohnung konnte nicht abgeholt werden.</div>`;
-    const d = document.createElement("div"); d.id = "result"; d.innerHTML = `<div class="box panel"><h1 class="${won ? "good" : ""}">${title}</h1><table><tr><th></th><th>Name</th><th>Nass gemacht</th><th>Schaden</th></tr>${rows}</table>${rew}<div style="text-align:center;margin-top:.6rem"><button class="btn go" id="resOk">Weiter</button></div></div>`;
+    const d = document.createElement("div"); d.id = "result"; d.innerHTML = `<div class="box panel"><h1 class="${won ? "good" : ""}">${title}</h1><table><tr><th></th><th>Name</th><th>Besiegt</th><th>Schaden</th></tr>${rows}</table>${rew}<div style="text-align:center;margin-top:.6rem"><button class="btn go" id="resOk">Weiter</button></div></div>`;
     document.body.appendChild(d); $("resOk").onclick = () => { sfx("click"); toBack(); };
   }
 
@@ -173,7 +173,7 @@ const Match = (() => {
     if (!S || S.pause || S.ended) return; S.pause = true; let sure = false;
     const d = document.createElement("div"); d.id = "pause"; d.innerHTML = `<div class="box panel"><h2>Pause</h2><p class="muted">Das Match läuft weiter, du stehst solange still.</p><div class="tabs" style="justify-content:center"><button class="btn good" id="pCont">Weiter</button><button class="btn warn" id="pLeave">Match verlassen</button></div></div>`;
     document.body.appendChild(d); $("pCont").onclick = () => { sfx("click"); d.remove(); S.pause = false; };
-    $("pLeave").onclick = () => { if (!sure) { sure = true; $("pLeave").textContent = "Wirklich? Du bekommst weniger Belohnung."; sfx("err"); return; } d.remove(); S.left = true; send({ t: "leave" }); setTimeout(() => { if (S && S.left) toBack(); }, 1500); };
+    $("pLeave").onclick = () => { if (!sure) { sure = true; $("pLeave").textContent = "Wirklich? Das zählt als Niederlage."; sfx("err"); return; } d.remove(); S.left = true; send({ t: "leave" }); setTimeout(() => { if (S && S.left) toBack(); }, 1500); };
   }
 
   /* ---------- Hauptschleife ---------- */
@@ -252,12 +252,12 @@ const Match = (() => {
     let alpha = 1; if (fl & 64) alpha = ally ? .45 : .25; else if (ally && inGrass(S.M, p.x, p.y)) alpha = .72; if (fl & 16) alpha *= .6 + .4 * Math.sin(t * 30);
     // Spur
     const tr = cos.trail; if (tr && tr !== "trail_none" && moving) { e.trailT -= dt; if (e.trailT <= 0) { e.trailT = .07; S.trails.push({ x: p.x + (Math.random() - .5) * 6, y: p.y + 8, t: 0, k: tr, i: Math.floor(Math.random() * 7) }); } }
-    const s = 34, scl = (fl & 8) ? 1 + Math.sin(t * 40) * .02 : 1;
+    const fa = e.fire ? now - e.fire : 9, rec = fa < .14 ? 1 - fa / .14 : 0, s = 34, scl = ((fl & 8) ? 1 + Math.sin(t * 40) * .02 : 1) * (1 - rec * .06);
     // Schild
     if (fl & 2) { c.fillStyle = "rgba(150,220,255,.3)"; c.strokeStyle = "rgba(255,255,255,.9)"; c.lineWidth = 2.4; c.beginPath(); c.arc(p.x, p.y - 4, PR + 9, 0, TAU); c.fill(); c.stroke(); }
     if (fl & 256) { c.strokeStyle = "rgba(90,230,140,.8)"; c.lineWidth = 2.4; wavyRing(c, p.x, p.y, PR + 6, t, "rgba(90,230,140,.8)", 2.4); }
     if (fl & 4) { c.fillStyle = "rgba(160,200,255,.4)"; c.beginPath(); c.ellipse(p.x, p.y + 9, 16, 6, 0, 0, TAU); c.fill(); }
-    drawDrop(cr, cos, p.x, p.y - 7, s * scl, t + id * 1.3, { moving, aim: ang, weapon: info.w, skin: cos.skin, hit: e.hit, alpha });
+    drawDrop(cr, cos, p.x - Math.cos(ang) * rec * 3, p.y - 7 - Math.sin(ang) * rec * 2, s * scl, t + id * 1.3, { moving, aim: ang, weapon: info.w, skin: cos.skin, hit: e.hit, alpha });
     if (fl & 8) { for (let i = 0; i < 3; i++) star(c, p.x + Math.cos(t * 6 + i * 2.1) * 14, p.y - 28 + Math.sin(t * 6 + i * 2.1) * 3, 4, "#ffe45e", t * 3 + i); }
   }
   function drawTag(o) {
@@ -301,7 +301,7 @@ const Match = (() => {
     if (label) txt(c, label, x, y, r * .3, "#fff"); c.restore();
   }
   function drawHud(now, t, dt, mv) {
-    c.setTransform(dpr, 0, 0, dpr, 0, 0); const l = lay(), me = S.me, md = S.init.mode, st = S.st || {}, ms = S.md;
+    c.setTransform(dpr, 0, 0, dpr, 0, 0); S.hurtV = Math.max(0, (S.hurtV || 0) - dt * 2.2); const low = S.me.al && S.me.hp / S.me.mhp < .3 ? .35 + .25 * Math.sin(now * 6) : 0, vv = Math.max(S.hurtV * .6, low); if (vv > 0) { const g = cr.createRadialGradient(VW / 2, VH / 2, VH * .35, VW / 2, VH / 2, VW * .65); g.addColorStop(0, "rgba(255,60,60,0)"); g.addColorStop(1, "rgba(255,60,60," + vv + ")"); cr.fillStyle = g; cr.fillRect(0, 0, VW, VH); } const l = lay(), me = S.me, md = S.init.mode, st = S.st || {}, ms = S.md;
     // oben Mitte: Info je Modus
     const top = (a, b) => { txt(c, a, VW / 2, 20, 24, "#fff"); if (b) txt(c, b, VW / 2, 44, 17, "#ffe9a8"); };
     const mmss = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
@@ -333,7 +333,8 @@ const Match = (() => {
     if (md === "perlen" || me.cu) { const parts = []; if (md === "perlen") parts.push("Perlen: " + me.pr); if (me.cu) parts.push("Kraft: " + me.cu); txt(c, parts.join("   "), VW / 2, VH - 68, 17, "#ffe9a8"); }
     // Zähler und Hinweise
     if (S.ph > 0) { S.sawCount = true; const k = (now * 1) % 1; txt(c, String(S.ph), VW / 2, VH * .38, 120 - k * 20, "#fff"); txt(c, S.md.n, VW / 2, VH * .22, 38, "#ffe45e"); } else if (S.sawCount && !S.sounded) { S.sounded = 1; sfx("go"); }
-    if (!me.al && !S.ended) { if (me.rs > 0) txt(c, "Zurück in " + Math.ceil(me.rs), VW / 2, VH * .4, 40, "#fff"); else if (me.sd) { txt(c, "Du bist nass – schau zu", VW / 2, VH * .25, 30, "#fff"); txt(c, "Tippe, um die Ansicht zu wechseln", VW / 2, VH * .25 + 30, 18, "#ffe9a8"); } }
+    if (S.tut === undefined) { try { S.tut = localStorage.getItem("ws_tut") ? 0 : 1; } catch (e) { S.tut = 0; } } if (S.tut && !S.ended && me.al) { S.tutT = (S.tutT || 0) + dt; if (S.tutT > 14) { S.tut = 0; try { localStorage.setItem("ws_tut", "1"); } catch (e) {} } else { const a = Math.min(1, S.tutT * 2) * Math.min(1, (14 - S.tutT)); cr.globalAlpha = a; txt(c, "Links ziehen: laufen", 150, VH - 150, 22, "#fff"); txt(c, "Rechts ziehen und loslassen: spritzen", VW - 190, VH - 190 - 0, 20, "#ffe45e"); txt(c, "Super: wenn der Ring voll ist", VW - 330, VH - 24, 18, "#ffd2ee"); cr.globalAlpha = 1; } }
+    if (!me.al && !S.ended) { if (me.rs > 0) txt(c, "Zurück in " + Math.ceil(me.rs), VW / 2, VH * .4, 40, "#fff"); else if (me.sd) { txt(c, "Du bist raus – du schaust zu", VW / 2, VH * .25, 30, "#fff"); txt(c, "Tippe, um die Ansicht zu wechseln", VW / 2, VH * .25 + 30, 18, "#ffe9a8"); } }
     if (S.banner) { const b = S.banner; b.t += dt; const k = Math.min(1, b.t * 5), a = b.t > b.d - .4 ? Math.max(0, (b.d - b.t) / .4) : 1; if (b.t > b.d) S.banner = null; else { c.globalAlpha = a; txt(c, b.s, VW / 2, b.small ? VH * .3 : VH * .36, (b.small ? 28 : 52) * (.6 + .4 * k), "#ffe45e"); c.globalAlpha = 1; } }
     if (S.err) txt(c, S.err, VW / 2, VH * .55, 24, "#ffb4a8");
   }

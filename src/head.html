@@ -22,6 +22,12 @@ canvas{display:block}
 #app>*{pointer-events:auto}
 .panel{background:var(--paper) var(--noise);border:2.5px solid var(--ink);border-radius:var(--wob);box-shadow:3px 4px 0 var(--ink),inset 0 0 0 2px rgba(255,255,255,.45),inset 0 -8px 14px -8px rgba(160,120,40,.28)}
 .btn{min-height:2.5rem;padding:.15rem .9rem;background:var(--paper);color:var(--ink);border:2.5px solid var(--ink);border-radius:var(--wob);font:inherit;font-size:1.1rem;cursor:pointer;box-shadow:2px 3px 0 var(--ink);touch-action:manipulation}
+.btn{transition:transform .08s,box-shadow .08s,background .15s}.btn:hover:not(:disabled){filter:brightness(1.04)}
+#s-lobby:not([hidden]),#s-auth:not([hidden]){animation:fadein .35s ease-out}
+#win:not([hidden]){animation:winin .22s ease-out}
+.cardx{transition:transform .1s}.cardx:active{transform:scale(.96)}
+@keyframes fadein{from{opacity:0}}
+@keyframes winin{from{opacity:0;transform:translateY(12px) scale(.98)}}
 .btn:active:not(:disabled){transform:translate(1px,2px);box-shadow:1px 1px 0 var(--ink)}
 .btn:disabled{opacity:.45;cursor:default}
 .btn.go{background:#ffd23f;font-family:var(--f-display);font-size:1.7rem;padding:.2rem 1.6rem;box-shadow:3px 4px 0 var(--ink)}
