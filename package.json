@@ -1,0 +1,14 @@
+{
+  "name": "wasserschlacht",
+  "private": true,
+  "scripts": {
+    "build": "./build.sh",
+    "dev": "./build.sh && wrangler dev",
+    "deploy": "./build.sh && wrangler deploy",
+    "test": "./build.sh && node scripts/test-sim.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4"
+  },
+  "type": "module"
+}
