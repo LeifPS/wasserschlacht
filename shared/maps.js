@@ -19,81 +19,74 @@ function gMirror(g, hor, ver) {
 }
 
 const MAP_BUILD = {
-  /* Showdown: offene Wiese mit Gras, Kisten, Teichen */
+  /* Showdown: sehr offene Wiese, wenig Deckung */
   wiese() {
     const w = 35, h = 31, g = mkGrid(w, h, "."); gBorder(g);
-    // linkes oberes Viertel zeichnen
-    gEll(g, 5, 5, 2, 1.5, "g"); gEll(g, 12, 3, 2, 1, "g"); gEll(g, 9, 11, 3, 2, "g"); gEll(g, 3, 13, 1.5, 2, "g"); gEll(g, 15, 8, 1.5, 1.5, "g");
-    gEll(g, 7, 8, 1.5, 1, "o"); gEll(g, 14, 13, 2, 1.5, "o");
-    gFill(g, 5, 2, 2, 1, "#"); gFill(g, 10, 6, 1, 3, "#"); gFill(g, 3, 9, 2, 1, "#"); gFill(g, 12, 10, 3, 1, "#"); gFill(g, 8, 14, 1, 2, "#"); gFill(g, 16, 4, 1, 3, "#");
-    [[4, 3], [8, 4], [8, 5], [13, 5], [2, 7], [6, 12], [11, 14], [15, 11], [16, 15], [2, 16], [5, 15], [9, 9]].forEach(p => gPut(g, p[0], p[1], "x"));
-    gPut(g, 2, 2, "S"); gPut(g, 9, 12, "S"); gPut(g, 14, 2, "S"); gPut(g, 2, 15, "S");
+    gEll(g, 6, 5, 2.5, 1.5, "g"); gEll(g, 12, 11, 2, 1.5, "g"); gEll(g, 3, 12, 1.5, 1.5, "g");
+    gEll(g, 10, 4, 1.5, 1, "o"); gEll(g, 14, 12, 1.5, 1, "o");
+    gFill(g, 10, 7, 1, 2, "#"); gFill(g, 4, 9, 2, 1, "#"); gFill(g, 15, 4, 1, 1, "#");
+    [[7, 9], [12, 3], [3, 3], [16, 9], [8, 13]].forEach(p => gPut(g, p[0], p[1], "x"));
+    gPut(g, 2, 2, "S"); gPut(g, 8, 6, "S"); gPut(g, 14, 2, "S"); gPut(g, 2, 14, "S");
     gMirror(g, true, true);
-    // Mitte frei lassen, Kisten in die Mitte (Kraftquelle)
     gFill(g, 15, 14, 5, 3, "."); gPut(g, 16, 15, "x"); gPut(g, 18, 15, "x"); gPut(g, 17, 14, "x"); gPut(g, 17, 16, "x");
     return g;
   },
-  /* Perlenjagd: Mine in der Mitte */
+  /* Perlenjagd: offene Mine in der Mitte */
   strand() {
     const w = 35, h = 21, g = mkGrid(w, h, "."); gBorder(g);
-    gPut(g, 17, 10, "m");
-    // Mine-Ring (obere linke Ecke, wird gespiegelt)
-    gFill(g, 15, 8, 2, 1, "#"); gFill(g, 15, 9, 1, 1, "#");
-    gPut(g, 17, 8, "#"); // Mittelspalte oben zu, Eingänge links/rechts
-    gEll(g, 9, 4, 2, 1.5, "g"); gEll(g, 11, 8, 1.5, 1, "g"); gEll(g, 4, 9, 1, 1.5, "g");
-    gFill(g, 6, 5, 2, 2, "#"); gFill(g, 12, 2, 3, 1, "#"); gFill(g, 10, 6, 1, 2, "#"); gFill(g, 20 - 3, 5, 1, 2, ".");
-    gEll(g, 3, 2, 1.5, 1, "o"); gEll(g, 14, 5, 1, 1, "o");
-    [[8, 9], [8, 10], [13, 3], [5, 3], [9, 2]].forEach(p => gPut(g, p[0], p[1], "x"));
+    gEll(g, 9, 4, 2, 1.5, "g"); gEll(g, 4, 9, 1, 1.5, "g");
+    gFill(g, 12, 3, 2, 1, "#"); gFill(g, 8, 7, 1, 2, "#");
+    gEll(g, 4, 3, 1.5, 1, "o"); gEll(g, 14, 6, 1, 1, "o");
+    [[7, 5], [13, 8], [10, 2]].forEach(p => gPut(g, p[0], p[1], "x"));
     gPut(g, 2, 4, "1"); gPut(g, 2, 10, "1");
     gMirror(g, true, true);
     g[10][17] = "m";
     return g;
   },
-  /* Knockout: Becken mit Säulen */
+  /* Knockout: Becken mit ein paar Säulen */
   becken() {
     const w = 35, h = 21, g = mkGrid(w, h, "."); gBorder(g);
-    gEll(g, 17, 10, 3, 2, "o");
-    gFill(g, 12, 3, 2, 2, "#"); gFill(g, 8, 7, 1, 3, "#"); gFill(g, 14, 8, 1, 1, "#"); gFill(g, 5, 3, 3, 1, "#"); gFill(g, 12, 8, 1, 1, "#");
-    gEll(g, 9, 4, 1.5, 1, "g"); gEll(g, 6, 9, 1.5, 1.5, "g"); gEll(g, 14, 6, 1, 1, "g");
-    gEll(g, 4, 6, 1, 1, "o"); gEll(g, 11, 9, 1, 1, "o");
-    [[10, 2], [7, 5], [15, 4], [3, 3], [11, 6]].forEach(p => gPut(g, p[0], p[1], "x"));
+    gEll(g, 17, 10, 2.5, 1.5, "o");
+    gFill(g, 11, 4, 1, 2, "#"); gFill(g, 7, 8, 1, 2, "#"); gFill(g, 14, 8, 1, 1, "#");
+    gEll(g, 9, 3, 1.5, 1, "g"); gEll(g, 5, 9, 1.5, 1, "g");
+    [[10, 7], [14, 3], [4, 5]].forEach(p => gPut(g, p[0], p[1], "x"));
     gPut(g, 2, 4, "1"); gPut(g, 2, 10, "1");
     gMirror(g, true, true);
     return g;
   },
-  /* Königsbecken: Wasser, schmale Wege, wandernde Becken */
+  /* Königsbecken: Teiche, offenes Gelände */
   teich() {
     const w = 35, h = 21, g = mkGrid(w, h, "."); gBorder(g);
-    gEll(g, 7, 6, 3, 2, "o"); gEll(g, 13, 3, 2, 1, "o"); gEll(g, 12, 9, 1.5, 1, "o"); gEll(g, 4, 3, 1.5, 1, "o");
-    gFill(g, 10, 6, 1, 2, "#"); gFill(g, 5, 9, 2, 1, "#"); gFill(g, 15, 5, 2, 1, "#"); gFill(g, 8, 2, 1, 2, "#");
-    gEll(g, 9, 5, 1, 1, "g"); gEll(g, 15, 8, 1.5, 1, "g"); gEll(g, 3, 8, 1, 1.5, "g");
-    [[11, 4], [14, 6], [6, 3], [9, 8], [3, 6]].forEach(p => gPut(g, p[0], p[1], "x"));
+    gEll(g, 7, 5, 2.5, 1.5, "o"); gEll(g, 13, 2, 1.5, 1, "o"); gEll(g, 12, 9, 1, 1, "o");
+    gFill(g, 10, 6, 1, 1, "#"); gFill(g, 5, 9, 1, 1, "#"); gFill(g, 15, 5, 1, 1, "#");
+    gEll(g, 9, 6, 1, 1, "g"); gEll(g, 3, 8, 1, 1, "g");
+    [[11, 4], [14, 7], [6, 3]].forEach(p => gPut(g, p[0], p[1], "x"));
     gPut(g, 17, 10, "k"); gPut(g, 17, 3, "k"); gPut(g, 8, 10, "k");
     gPut(g, 2, 4, "1"); gPut(g, 2, 10, "1");
     gMirror(g, true, true);
     return g;
   },
-  /* Eimer-Heist: Eimer links/rechts, Zäune aus Kisten */
+  /* Eimer-Heist: Eimer links/rechts, offener Garten */
   garten() {
     const w = 35, h = 21, g = mkGrid(w, h, "."); gBorder(g);
     gPut(g, 2, 10, "a");
-    gFill(g, 4, 8, 1, 1, "x"); gFill(g, 4, 12 - 1, 1, 1, "x"); gFill(g, 3, 7, 1, 1, "#"); gFill(g, 3, 11 - 1, 1, 1, ".");
-    gEll(g, 9, 4, 2, 1.5, "g"); gEll(g, 10, 8, 1.5, 1.5, "g"); gEll(g, 7, 2, 1, 1, "g");
-    gFill(g, 8, 6, 1, 2, "#"); gFill(g, 12, 3, 2, 1, "#"); gFill(g, 13, 8, 1, 3, "#"); gFill(g, 6, 9, 1, 2, "#");
-    gEll(g, 15, 4, 1, 1, "o"); gEll(g, 4, 3, 1, 1, "o");
-    [[7, 4], [11, 6], [15, 7], [9, 9], [5, 6], [12, 2]].forEach(p => gPut(g, p[0], p[1], "x"));
+    gPut(g, 4, 8, "x"); gPut(g, 4, 11, "x");
+    gEll(g, 9, 4, 2, 1.5, "g"); gEll(g, 10, 9, 1.5, 1, "g");
+    gFill(g, 8, 6, 1, 1, "#"); gFill(g, 13, 3, 1, 1, "#"); gFill(g, 13, 8, 1, 2, "#");
+    gEll(g, 15, 4, 1, 1, "o");
+    [[7, 3], [11, 6], [15, 8]].forEach(p => gPut(g, p[0], p[1], "x"));
     gPut(g, 5, 4, "1"); gPut(g, 5, 10, "1");
     gMirror(g, true, true);
     return g;
   },
-  /* Eroberung: drei Punkte in einer Reihe, Gräben oben und unten */
+  /* Eroberung: drei Punkte in einer Reihe, offenes Ufer */
   ufer() {
     const w = 35, h = 21, g = mkGrid(w, h, "."); gBorder(g);
     gPut(g, 17, 10, "c"); gPut(g, 8, 10, "c");
-    gEll(g, 8, 5, 2, 1, "g"); gEll(g, 14, 7, 1.5, 1, "g"); gEll(g, 12, 3, 1, 1, "g");
-    gFill(g, 6, 7, 5, 1, "#"); gFill(g, 12, 4, 1, 2, "#"); gFill(g, 4, 3, 2, 1, "#"); gFill(g, 15, 9, 1, 1, "#");
+    gEll(g, 8, 5, 2, 1, "g"); gEll(g, 14, 7, 1.5, 1, "g");
+    gFill(g, 7, 7, 2, 1, "#"); gFill(g, 12, 4, 1, 1, "#"); gFill(g, 15, 9, 1, 1, "#");
     gEll(g, 4, 6, 1, 1.5, "o"); gEll(g, 16, 3, 1.5, 1, "o");
-    [[9, 3], [11, 8], [14, 5], [6, 9], [3, 8]].forEach(p => gPut(g, p[0], p[1], "x"));
+    [[10, 6], [14, 5]].forEach(p => gPut(g, p[0], p[1], "x"));
     gPut(g, 2, 4, "1"); gPut(g, 2, 10, "1");
     gMirror(g, true, true);
     return g;

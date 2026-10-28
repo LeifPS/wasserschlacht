@@ -31,10 +31,17 @@ function buildWorld(M) {
     else if (t === T_WATER) { if (r < .5) { const px = x + 6 + r * 10; c.strokeStyle = "rgba(255,255,255,.8)"; k.beginPath(); k.moveTo(px, y + 12); k.quadraticCurveTo(px + 5, y + 8, px + 10, y + 12); k.stroke(); } }
     else if (t >= T_CE) { const d = currentDir(t); c.save(); c.translate(x + 16, y + 16); c.rotate(Math.atan2(d[1], d[0])); c.strokeStyle = "rgba(255,255,255,.9)"; c.lineWidth = 2.4; c.beginPath(); c.moveTo(-7, -6); c.lineTo(0, 0); c.lineTo(-7, 6); c.moveTo(3, -6); c.lineTo(10, 0); c.lineTo(3, 6); c.stroke(); c.restore(); }
   }
-  // Schraffur wie mit dem Stift
-  c.lineWidth = 1.3; c.strokeStyle = "rgba(29,39,66,.13)"; k.beginPath();
-  for (let ty = 0; ty < M.h; ty++) for (let tx = 0; tx < M.w; tx++) { const t = tl(tx, ty); if (t !== T_FLOOR && t !== T_GRASS) continue; const r = hsh(tx, ty, 11); if (r > .6) continue; const x = tx * TS + 4 + hsh(tx, ty, 12) * 8, y = ty * TS + 20 + hsh(tx, ty, 13) * 8; for (let i = 0; i < 3 + (r * 6 | 0) % 3; i++) { k.moveTo(x + i * 5, y); k.lineTo(x + i * 5 + 6, y - 7); } }
-  k.stroke();
+  // Buntstift-Schraffur: jede Kachel wird mit wackeligen Strichen ausgemalt
+  const shade = (h, f) => "rgb(" + [1, 3, 5].map(i => Math.round(parseInt(h.slice(i, i + 2), 16) * f)).join(",") + ")";
+  c.lineCap = "round";
+  for (let ty = 0; ty < M.h; ty++) for (let tx = 0; tx < M.w; tx++) {
+    const t = tl(tx, ty); if (t === T_WALL || t === T_CRATE) continue; const x = tx * TS, y = ty * TS, r = hsh(tx, ty, 21), water = t === T_WATER || t >= T_CE;
+    c.strokeStyle = water ? "rgba(255,255,255,.38)" : t === T_GRASS ? shade(th.grass, .82) : shade(th.floor[r < .5 ? 0 : 1], .9); c.globalAlpha = water ? 1 : .75; c.lineWidth = 3.4; k.beginPath();
+    const n = 5 + (r * 3 | 0), dir = r < .5 ? 1 : -1;
+    for (let i = 0; i < n; i++) { const o = (i + hsh(tx, ty, 30 + i) * .6) * (TS + 6) / n - 3; if (dir > 0) { k.moveTo(x + o, y + TS - 1); k.lineTo(x + o + 9, y + 1); } else { k.moveTo(x + o + 9, y + TS - 1); k.lineTo(x + o, y + 1); } }
+    k.stroke(); c.globalAlpha = 1;
+    if (r < .55 && !water) { c.lineWidth = 1.2; c.strokeStyle = "rgba(29,39,66,.16)"; k.beginPath(); const x0 = x + 4 + hsh(tx, ty, 12) * 8, y0 = y + 22 + hsh(tx, ty, 13) * 6; for (let i = 0; i < 4; i++) { k.moveTo(x0 + i * 5, y0); k.lineTo(x0 + i * 5 + 6, y0 - 8); } k.stroke(); }
+  }
   // Wasserränder
   c.lineWidth = 2.4; c.strokeStyle = INK; k.beginPath();
   for (let ty = 0; ty < M.h; ty++) for (let tx = 0; tx < M.w; tx++) {

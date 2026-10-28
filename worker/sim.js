@@ -27,7 +27,7 @@ export class Sim {
     const ab = lo.a ? AB[lo.a.id] : null;
     return {
       id, name: s.name, human: !!s.human, team: s.team, lo, w, wl: lo.w.lvl, a: ab ? ab.id : null, al: lo.a ? lo.a.lvl : 1, ak: ab ? ab.k : null,
-      x: 0, y: 0, hp: st.hp, baseHp: st.hp, maxHp: st.hp, spd: st.spd, rlMul: st.reload,
+      x: 0, y: 0, hp: st.hp, baseHp: st.hp, maxHp: st.hp, spd: s.human ? st.spd : st.spd * 0.82, rlMul: st.reload,
       alive: true, ammo: w.ammo, sc: 0, abCd: 0, mx: 0, my: 0, face: 0, fireCd: 0, kbx: 0, kby: 0, dash: null,
       fx: { slow: 0, slowT: 0, spd: 0, spdMul: 0, shield: 0, shieldRed: 0, stun: 0, root: 0, invis: 0, inv: 0, heal: 0, healRate: 0 },
       kills: 0, dmg: 0, deaths: 0, respawn: 0, lastHurt: 99, reveal: 0, cubes: 0, perlen: 0, revived: false, seq: 0, conn: true, place: 0,
@@ -83,7 +83,7 @@ export class Sim {
   /* ---------- Schießen ---------- */
   #fire(p, ax, ay, d) {
     if (p.ammo < 1 || p.fireCd > 0) return;
-    p.ammo -= 1; p.fireCd = 0.22; p.face = this.#dirOf(p, ax, ay); this.#breakInvis(p);
+    p.ammo -= 1; p.fireCd = 0.45; p.face = this.#dirOf(p, ax, ay); this.#breakInvis(p);
     const w = this.#weaponOf(p, null); this.#volley(p, w, p.face, d, false);
   }
   #super(p, ax, ay, d) {
@@ -107,7 +107,7 @@ export class Sim {
   #shot(p, w, a, d) {
     const dx = Math.cos(a), dy = Math.sin(a), ox = p.x + dx * 16, oy = p.y + dy * 16;
     if (w.t === "l") {
-      const dist = clampN(d == null ? 0.75 : d, 0.25, 1) * w.rng * TS, tx = p.x + dx * dist, ty = p.y + dy * dist, fl = Math.max(0.4, dist / 380);
+      const dist = clampN(d == null ? 0.75 : d, 0.25, 1) * w.rng * TS, tx = p.x + dx * dist, ty = p.y + dy * dist, fl = Math.max(0.55, dist / 250);
       this.proj.push({ id: this.nid++, owner: p.id, team: p.team, kind: 1, x: ox, y: oy, sx: ox, sy: oy, tx, ty, t: 0, fl, dmg: w.dmg, aoe: (w.aoe || 1.5) * TS, rad: 8, slow: w.slow || 0, root: w.root || 0, kb: w.kb || 0, dead: false });
       return;
     }
@@ -126,7 +126,7 @@ export class Sim {
     }
   }
   #lobAt(s) {
-    const p = s.p, ox = p.x, oy = p.y, dist = Math.hypot(s.tx - ox, s.ty - oy), fl = Math.max(0.45, dist / 420);
+    const p = s.p, ox = p.x, oy = p.y, dist = Math.hypot(s.tx - ox, s.ty - oy), fl = Math.max(0.6, dist / 280);
     this.proj.push({ id: this.nid++, owner: p.id, team: p.team, kind: 1, x: ox, y: oy, sx: ox, sy: oy, tx: s.tx, ty: s.ty, t: 0, fl, dmg: s.dmg, aoe: s.aoe, rad: 8, slow: s.slow || 0, root: s.root || 0, kb: 0, dead: false, rainy: 1 });
   }
 
@@ -137,6 +137,7 @@ export class Sim {
     if (t.fx.shield > 0) amount *= 1 - t.fx.shieldRed;
     if (t.a === "eisenhaut") amount *= 1 - Math.min(0.5, AB_VAL.eisenhaut.red * abilityPower(t.al));
     if (src) {
+      if (src.ai) amount *= 0.55;
       if (src.a === "adrenalin" && src.hp < src.maxHp * AB_VAL.adrenalin.below) amount *= 1 + AB_VAL.adrenalin.dmg * abilityPower(src.al);
       if (src.cubes) amount *= 1 + 0.1 * src.cubes;
     }
@@ -388,7 +389,7 @@ export class Sim {
     const id = this.modeId, ms = this.ms, M = this.M; this.timeLeft = Math.max(0, this.mode.time - this.t);
     if (id === "showdown") {
       if (this.t > ms.begin) { const k = clampN((this.t - ms.begin) / (ms.end - ms.begin), 0, 1); ms.zr = ms.r0 + (ms.rEnd - ms.r0) * k; }
-      for (const p of this.players) if (p.alive && Math.hypot(p.x - ms.zx, p.y - ms.zy) > ms.zr) this.#hurt(p, 80 * DT, null, { noBreak: true });
+      for (const p of this.players) if (p.alive && Math.hypot(p.x - ms.zx, p.y - ms.zy) > ms.zr) this.#hurt(p, 110 * DT, null, { noBreak: true });
       const alive = this.players.filter(p => p.alive);
       if (alive.length <= 1) { if (alive[0]) alive[0].place = 1; this.#finish(alive[0] ? alive[0].id : -1, "last"); }
       else if (this.timeLeft <= 0) { alive.sort((a, b) => b.hp - a.hp); alive.forEach((p, i) => p.place = i + 1); this.#finish(alive[0].id, "time"); }

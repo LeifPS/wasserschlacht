@@ -3,13 +3,13 @@ import { TS, PR, W, WEAPONS, ABILITIES, AB, COSMETICS, DEFAULT_COS, tileAt, walk
 
 const NAMES = ["Tropf", "Pfützi", "Plitsch", "Platsch", "Nässchen", "Spritzer", "Quelle", "Gischt", "Perle", "Nebelchen", "Wellchen", "Regina", "Bächle", "Sprudel", "Blubb", "Tröpfi", "Dampfer", "Fluttis", "Moorli", "Eistee"];
 export function makeBotLoadout(rnd, avgLvl, idx) {
-  const lvl = clampN(Math.round(avgLvl + (rnd() - .5) * 4), 1, 60);
+  const lvl = clampN(Math.round(avgLvl - 2 + (rnd() - .5) * 4), 1, 60);
   const pool = WEAPONS.filter(w => w.r <= (lvl > 25 ? 4 : lvl > 14 ? 3 : lvl > 7 ? 2 : 1));
   const w = pool[Math.floor(rnd() * pool.length)];
   const abPool = ABILITIES.filter(a => a.r <= (lvl > 25 ? 4 : lvl > 14 ? 3 : lvl > 7 ? 2 : 1)), ab = rnd() < 0.8 ? abPool[Math.floor(rnd() * abPool.length)] : null;
   const cos = { ...DEFAULT_COS };
   for (const slot of ["color", "hat", "face", "back", "trail"]) { const l = COSMETICS.filter(c => c.s === slot && c.r <= 2); if (rnd() < (slot === "color" ? 1 : 0.5)) cos[slot] = l[Math.floor(rnd() * l.length)].id; }
-  return { name: NAMES[(idx * 7 + Math.floor(rnd() * 20)) % NAMES.length], lvl, w: { id: w.id, lvl: clampN(Math.ceil(lvl / 6), 1, 9) }, a: ab ? { id: ab.id, lvl: clampN(Math.ceil(lvl / 10), 1, 7) } : null, cos, up: { hp: clampN(Math.floor(lvl / 8), 0, 10), spd: 0, pump: 0 }, rp: 0 };
+  return { name: NAMES[(idx * 7 + Math.floor(rnd() * 20)) % NAMES.length], lvl, w: { id: w.id, lvl: clampN(Math.ceil(lvl / 6), 1, 9) }, a: ab ? { id: ab.id, lvl: clampN(Math.ceil(lvl / 10), 1, 7) } : null, cos, up: { hp: 0, spd: 0, pump: 0 }, rp: 0 };
 }
 
 const NB = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
@@ -37,13 +37,13 @@ export function botThink(sim, p, dt) {
   if (sim.frozen || (sim.modeId === "knockout" && sim.ms.st !== "play")) { p.mx = p.my = 0; return; }
   ai.t -= dt; ai.st -= dt; ai.pt -= dt;
   if (ai.t > 0) return;
-  ai.t = 0.16 + sim.rnd() * 0.08;
-  const skill = ai.skill || (ai.skill = 0.55 + sim.rnd() * 0.35), rnd = sim.rnd, w = p.w, rngU = w.rng * TS * (p.a === "druck" ? 1.1 : 1);
+  ai.t = 0.4 + sim.rnd() * 0.3;
+  const skill = ai.skill || (ai.skill = 0.1 + sim.rnd() * 0.3), rnd = sim.rnd, w = p.w, rngU = w.rng * TS * (p.a === "druck" ? 1.1 : 1);
   const enemies = sim.players.filter(q => q.alive && q.id !== p.id && (sim.mode.ffa || q.team !== p.team));
   // sichtbares Ziel
   let tgt = null, td = 1e9;
   for (const q of enemies) {
-    const d = Math.hypot(q.x - p.x, q.y - p.y); if (d > (sim.modeId === "showdown" && sim.t < 30 ? 7 : 11) * TS) continue;
+    const d = Math.hypot(q.x - p.x, q.y - p.y); if (d > (sim.modeId === "showdown" && sim.t < 40 ? 5 : 8) * TS) continue;
     if (q.fx.invis > 0 && d > 2 * TS) continue; if (inGrass(M, q.x, q.y) && q.reveal <= 0 && d > 3 * TS) continue;
     const score = d * (0.7 + 0.6 * q.hp / q.maxHp); if (score < td && !rayBlocked(M, p.x, p.y, q.x, q.y, t => t === 1)) { td = score; tgt = q; }
   }
@@ -68,11 +68,11 @@ export function botThink(sim, p, dt) {
   if (!tgt && (p.mx || p.my)) p.face = Math.atan2(p.my, p.mx);
   // Schießen
   if (tgt && dist <= rngU * 0.97) {
-    const sp = w.t === "l" ? 400 : w.spd || 600, tt = w.t === "l" ? dist / 380 : dist / sp;
-    const px = tgt.x + (tgt.vx || 0) * tt * 0.8, py = tgt.y + (tgt.vy || 0) * tt * 0.8;
-    const err = (rnd() - .5) * (1 - skill) * 0.5, ang = Math.atan2(py - p.y, px - p.x) + err, dd = clampN(Math.hypot(px - p.x, py - p.y) / rngU, 0.2, 1);
+    const sp = w.t === "l" ? 250 : w.spd || 600, tt = w.t === "l" ? dist / 250 : dist / sp;
+    const px = tgt.x + (tgt.vx || 0) * tt * 0.3, py = tgt.y + (tgt.vy || 0) * tt * 0.3;
+    const err = (rnd() - .5) * (1 - skill) * 1.1, ang = Math.atan2(py - p.y, px - p.x) + err, dd = clampN(Math.hypot(px - p.x, py - p.y) / rngU, 0.2, 1);
     p.face = ang;
-    if (rnd() < 0.55 + skill * 0.4) {
+    if (rnd() < 0.18 + skill * 0.4) {
       if (p.sc >= 1 && dist < rngU * 0.85 && w.sup) sim.superFire(p.id, Math.cos(ang), Math.sin(ang), dd);
       else if (p.ammo >= 1) sim.fire(p.id, Math.cos(ang), Math.sin(ang), dd);
     }
@@ -80,7 +80,7 @@ export function botThink(sim, p, dt) {
   } else {
     // Kisten oder Eimer beschießen
     const obj = nearestShootable(sim, p, rngU);
-    if (obj && p.ammo >= 1 && rnd() < 0.7) { const ang = Math.atan2(obj.y - p.y, obj.x - p.x); p.face = ang; sim.fire(p.id, Math.cos(ang), Math.sin(ang), clampN(Math.hypot(obj.x - p.x, obj.y - p.y) / rngU, 0.2, 1)); }
+    if (obj && p.ammo >= 1 && rnd() < 0.3) { const ang = Math.atan2(obj.y - p.y, obj.x - p.x); p.face = ang; sim.fire(p.id, Math.cos(ang), Math.sin(ang), clampN(Math.hypot(obj.x - p.x, obj.y - p.y) / rngU, 0.2, 1)); }
     if (enemies.length) useAbility(sim, p, null, 1e9, p.face, goal, rnd);
   }
   ai.lastHp = p.hp;

@@ -3,8 +3,8 @@ const TS = 32;                 // Kachelgröße in Weltmaßeinheiten
 const TICK = 30;               // Server-Ticks pro Sekunde
 const DT = 1 / TICK;
 const PR = 13;                 // Radius eines Tropfens
-const BASE_SPEED = 150;        // Einheiten pro Sekunde
-const BASE_HP = 1000;
+const BASE_SPEED = 100;        // Einheiten pro Sekunde
+const BASE_HP = 2600;
 const BOT_FILL_S = 15;         // so lange wartet die Warteschlange auf echte Spieler, dann kommen Bots
 
 const RAR = [
@@ -53,6 +53,7 @@ const WEAPONS = [
     d: "Drei Strahlen, die von Wänden abprallen.",
     sup: { n: "Farbenregen", k: "s", mul: { n1: 4 }, set: { spr: 340 }, need: 1900 } }
 ];
+const W_PACE = (() => { WEAPONS.forEach(w => { w.rl = Math.round(w.rl * 1.45 * 10) / 10; w.spd = Math.round(w.spd * 0.68); if (w.sup) w.sup.need = Math.round(w.sup.need * 1.5); }); return 1; })();
 const W = Object.fromEntries(WEAPONS.map(w => [w.id, w]));
 const WEAPON_PRICE = [300, 1200, 4500, 14000, 40000];
 WEAPONS.forEach(w => { if (w.id !== "pistole") w.price = WEAPON_PRICE[w.r]; });
@@ -183,12 +184,12 @@ const COS_DUP_REFUND = [60, 150, 400, 1200, 4000];
 
 /* ----- Spielmodi ----- */
 const MODES = {
-  showdown: { id: "showdown", n: "Showdown", d: "5 Tropfen, jeder gegen jeden. Die Trockenheit rückt vor, nur einer bleibt nass.", teams: 5, per: 1, ffa: true, time: 200, map: "wiese" },
-  perlen: { id: "perlen", n: "Perlenjagd", d: "Sammle 10 Perlen und halte sie 15 Sekunden.", teams: 2, per: 3, time: 150, map: "strand", need: 10, hold: 15 },
-  knockout: { id: "knockout", n: "Knockout", d: "Drei Runden, kein Zurückkehren. Zwei Siege gewinnen.", teams: 2, per: 3, time: 60, map: "becken", rounds: 2 },
-  koenig: { id: "koenig", n: "Königsbecken", d: "Halte das wandernde Becken und sammle Punkte.", teams: 2, per: 3, time: 150, map: "teich", goal: 100 },
-  heist: { id: "heist", n: "Eimer-Heist", d: "Zerstöre den Eimer der Gegner und schütze deinen.", teams: 2, per: 3, time: 150, map: "garten", bucketHp: 9000 },
-  eroberung: { id: "eroberung", n: "Eroberung", d: "Halte drei Stellen auf der Karte und sammle Punkte.", teams: 2, per: 3, time: 150, map: "ufer", goal: 100 }
+  showdown: { id: "showdown", n: "Showdown", d: "5 Tropfen, jeder gegen jeden. Die Trockenheit rückt vor, nur einer bleibt nass.", teams: 5, per: 1, ffa: true, time: 330, map: "wiese" },
+  perlen: { id: "perlen", n: "Perlenjagd", d: "Sammle 10 Perlen und halte sie 15 Sekunden.", teams: 2, per: 3, time: 260, map: "strand", need: 10, hold: 15 },
+  knockout: { id: "knockout", n: "Knockout", d: "Drei Runden, kein Zurückkehren. Zwei Siege gewinnen.", teams: 2, per: 3, time: 100, map: "becken", rounds: 2 },
+  koenig: { id: "koenig", n: "Königsbecken", d: "Halte das wandernde Becken und sammle Punkte.", teams: 2, per: 3, time: 260, map: "teich", goal: 100 },
+  heist: { id: "heist", n: "Eimer-Heist", d: "Zerstöre den Eimer der Gegner und schütze deinen.", teams: 2, per: 3, time: 260, map: "garten", bucketHp: 9000 },
+  eroberung: { id: "eroberung", n: "Eroberung", d: "Halte drei Stellen auf der Karte und sammle Punkte.", teams: 2, per: 3, time: 260, map: "ufer", goal: 100 }
 };
 const MODE_IDS = Object.keys(MODES);
 const TEAM_MODES = MODE_IDS.filter(m => !MODES[m].ffa);
