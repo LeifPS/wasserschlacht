@@ -106,9 +106,51 @@ const Match = (() => {
       if (rw.drop >= 0) rew += `<div style="text-align:center;font:1.3rem var(--f-display)">Du hast einen ${DROPS[rw.drop].n} bekommen! Du findest ihn unter Fähigkeiten.</div>`;
       if (rw.gemFind) rew += `<div style="text-align:center;font:1.3rem var(--f-display)">Glückstreffer: ${gemH(1)}</div>`;
     } else rew = `<div class="muted" style="text-align:center">Die Belohnung konnte nicht abgeholt werden.</div>`;
-    const d = document.createElement("div"); d.id = "result"; d.innerHTML = `<div class="box panel"><h1 class="${won ? "win" : "lose"}">${title}</h1><table><tr><th></th><th>Name</th><th>Besiegt</th><th>Schaden</th></tr>${rows}</table>${rew}<div style="text-align:center;margin-top:.6rem"><button class="btn go" id="resOk">Weiter</button></div></div>`;
+    const d = document.createElement("div"); d.id = "result";
+    d.innerHTML = `<canvas id="resCv"></canvas><div id="resRew">${rew}</div><div id="resBtns"><button class="btn good" id="resAgain">Nochmal spielen</button><button class="btn go" id="resOk">Weiter</button></div>`;
     if (won) { let cf = ""; for (let i = 0; i < 40; i++) cf += `<i style="left:${Math.random() * 100}%;background:${RAINBOW[i % 7]};animation-delay:${Math.random() * 2}s;animation-duration:${2.5 + Math.random() * 2}s"></i>`; d.insertAdjacentHTML("afterbegin", `<div class="confetti">${cf}</div>`); }
-    document.body.appendChild(d); $("resOk").onclick = () => { sfx("click"); toBack(); };
+    document.body.appendChild(d); sfx("win");
+    const cvR = $("resCv"), t0 = performance.now() / 1000, ss = S, ease = k => { k = clampN(k, 0, 1); return 1 + 2.5 * Math.pow(k - 1, 3) + 1.5 * Math.pow(k - 1, 2); };
+    const score = r => r.k * 1500 + r.d, own = tb.filter(r => S.ffa ? true : r.tm === S.myTeam), foe = tb.filter(r => !S.ffa && r.tm !== S.myTeam);
+    const winRows = S.ffa ? tb.filter(r => r.pl === 1) : tb.filter(r => r.tm === m.win), star = winRows.length ? winRows.reduce((a, r) => score(r) > score(a) ? r : a) : null;
+    const dmgTop = tb.reduce((a, r) => r.d > a.d ? r : a, tb[0]), kTop = tb.reduce((a, r) => r.k > a.k ? r : a, tb[0]);
+    const loop = () => {
+      if (!document.body.contains(d)) return; const now = performance.now() / 1000, el = now - t0, dpr = Math.min(2, devicePixelRatio || 1); sizeCv(cvR, dpr);
+      const cx = cvR.getContext("2d"), w = cvR.width / dpr, h = cvR.height / dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0); cx.clearRect(0, 0, w, h);
+      const k = sketchCtx(cx, 3.7, 40), cxr = cx; k.lineJoin = k.lineCap = "round";
+      // Hintergrund: Blau links, Rot rechts (bei Einzelspiel nur Blau)
+      const split = S.ffa ? w : w * .62;
+      k.fillStyle = won || S.ffa ? "#3f8fe0" : "#4a79c4"; k.beginPath(); k.moveTo(0, 0); k.lineTo(split + 40, 0); k.lineTo(split - 40, h); k.lineTo(0, h); k.closePath(); k.fill();
+      if (!S.ffa) { k.fillStyle = "#d8493b"; k.beginPath(); k.moveTo(split + 40, 0); k.lineTo(w, 0); k.lineTo(w, h); k.lineTo(split - 40, h); k.closePath(); k.fill(); }
+      k.strokeStyle = INK; k.lineWidth = 5; if (!S.ffa) { k.beginPath(); k.moveTo(split + 40, 0); k.lineTo(split - 40, h); k.stroke(); }
+      k.fillStyle = "rgba(255,255,255,.1)"; for (let i = 0; i < 9; i++) { k.beginPath(); k.arc((i * 211 + el * 12) % w, (i * 97) % h, 26 + (i % 3) * 14, 0, TAU); k.fill(); }
+      // Titel
+      const te = ease(el / .5), tcol = won ? "#fff3b8" : draw ? "#e8f1ff" : "#d6dcea"; cx.save(); cx.translate(w * .03 + 140 * te - 140, h * .1); cx.rotate(-.05); cxr.lineWidth = 8; cx.restore();
+      cx.save(); cx.translate(w * .05, h * .12); cx.rotate(-.05); cx.scale(.7 + .3 * te, .7 + .3 * te); txt(k, title, 0, 0, Math.min(86, h * .15), tcol, "left"); cx.restore();
+      // Karten
+      const drawCards = (rows, x0, x1, y, big, side) => {
+        const n = rows.length || 1, gap = 10, cw = Math.min((x1 - x0 - gap * (n - 1)) / n, big ? 170 : 130), ch = Math.min(h * (big ? .44 : .36), cw * 1.6);
+        rows.forEach((r, i) => {
+          const e = ease((el - .25 - i * .1 - (side ? .15 : 0)) / .5), x = x0 + (x1 - x0 - (cw * n + gap * (n - 1))) / 2 + i * (cw + gap) + (1 - e) * (side ? w * .35 : -w * .35);
+          cx.save(); cx.translate(x + cw / 2, y + ch / 2); cx.rotate(((i % 2) ? .02 : -.02)); cx.translate(-cw / 2, -ch / 2);
+          const isStar = star && r.id === star.id; if (isStar) { k.fillStyle = "#ffe45e"; k.beginPath(); k.rect(-5, -5, cw + 10, ch + 10); k.fill(); }
+          plaque(k, 0, 0, cw, ch, side ? "#ffb9ae" : "#bcdcff", 0);
+          const info = ss.players.find(q => q.id === r.id); if (info) drawDrop(cxr, info.c, cw / 2, ch * .4, ch * .36, now + i, { alpha: 1 });
+          k.fillStyle = INK; k.beginPath(); k.rect(0, ch * .62, cw, ch * .38); k.fill();
+          const nm = r.n.length > 11 ? r.n.slice(0, 10) + "…" : r.n; ptxt(cxr, nm, cw / 2, ch * .68, Math.min(22, cw * .15), r.id === you ? "#ffe45e" : "#fff");
+          ptxt(cxr, "Besiegt " + r.k, cw / 2, ch * .8, Math.min(17, cw * .12), "#fff"); ptxt(cxr, fmt(r.d) + " Schaden", cw / 2, ch * .92, Math.min(16, cw * .115), "#9fd8f5");
+          if (isStar) { const by = -22 + Math.sin(now * 5) * 2; cx.save(); cx.translate(cw / 2, by); ptxt(cxr, "Stern des Spiels", 0, 0, 20, "#fff3b8"); cx.restore(); }
+          else if (r.id === dmgTop.id && dmgTop.d > 0) ptxt(cxr, "Meister Schaden", cw / 2, -12, 14, "#fff");
+          cx.restore();
+        });
+      };
+      if (S.ffa) drawCards([...tb].sort((a, b) => (a.pl || 9) - (b.pl || 9)), 20, w - 20, h * .27, true, 0);
+      else { drawCards(own, 10, split - 30, h * .24, true, 0); drawCards(foe, split + 10, w - 10, h * .34, false, 1); }
+      requestAnimationFrame(loop);
+    };
+    loop();
+    $("resOk").onclick = () => { sfx("click"); toBack(); };
+    $("resAgain").onclick = () => { sfx("click"); toBack(); setTimeout(() => { try { doPlay(); } catch (e) {} }, 900); };
   }
 
   /* ---------- Eingabe ---------- */
@@ -333,11 +375,37 @@ const Match = (() => {
     if (me.al) { const w = Math.min(260, VW * .3), x = VW / 2 - w / 2, y = VH - 62, f = clampN(me.hp / me.mhp, 0, 1); plaque(c, x - 8, y - 6, w + 16, 28, "#f6efd9"); c.fillStyle = "rgba(29,39,66,.18)"; fr(x, y, w, 16); c.fillStyle = f > .35 ? "#58d36c" : "#ff6a5a"; fr(x, y, w * f, 16); c.fillStyle = "rgba(255,255,255,.4)"; fr(x + 2, y + 2, Math.max(0, w * f - 4), 4); txt(c, Math.round(me.hp) + " / " + me.mhp, VW / 2, y + 9, 15, "#fff"); }
     if (md === "perlen" || me.cu) { const parts = []; if (md === "perlen") parts.push("Perlen: " + me.pr); if (me.cu) parts.push("Kraft: " + me.cu); txt(c, parts.join("   "), VW / 2, VH - 80, 18, "#ffe9a8"); }
     // Zähler und Hinweise
-    if (S.ph > 0) { S.sawCount = true; const k = (now * 1) % 1; const bw = tw(cr, S.md.n, 44) + 60; plaque(c, VW / 2 - bw / 2, VH * .14, bw, 60, "#ffe9a0", -.02); ptxt(cr, S.md.n, VW / 2, VH * .14 + 31, 44, INK); txt(c, String(S.ph), VW / 2, VH * .5, 150 - k * 40, "#fff"); } else if (S.sawCount && !S.sounded) { S.sounded = 1; sfx("go"); }
-    if (S.tut === undefined) { try { S.tut = localStorage.getItem("ws_tut") ? 0 : 1; } catch (e) { S.tut = 0; } } if (S.tut && !S.ended && me.al) { S.tutT = (S.tutT || 0) + dt; if (S.tutT > 14) { S.tut = 0; try { localStorage.setItem("ws_tut", "1"); } catch (e) {} } else { const a = Math.min(1, S.tutT * 2) * Math.min(1, (14 - S.tutT)); cr.globalAlpha = a; const tt = "Links ziehen: laufen  ·  Rechts ziehen und loslassen: spritzen  ·  Super: Ring voll", w = tw(cr, tt, 19) + 30; plaque(c, VW / 2 - w / 2, VH * .22, w, 34, "#fff3b8"); ptxt(cr, tt, VW / 2, VH * .22 + 18, 19, INK); cr.globalAlpha = 1; } }
+    if (S.ph > 0) { S.sawCount = true; S.vsT = (S.vsT || 0) + dt; drawVs(now); } else if (S.sawCount && !S.sounded) { S.sounded = 1; sfx("go"); S.banner = { s: S.md.n + "!", t: 0, d: 1.6 }; }
+    if (S.tut === undefined) { try { S.tut = localStorage.getItem("ws_tut") ? 0 : 1; } catch (e) { S.tut = 0; } } if (S.tut && !S.ended && me.al && !S.ph) { S.tutT = (S.tutT || 0) + dt; if (S.tutT > 14) { S.tut = 0; try { localStorage.setItem("ws_tut", "1"); } catch (e) {} } else { const a = Math.min(1, S.tutT * 2) * Math.min(1, (14 - S.tutT)); cr.globalAlpha = a; const tt = "Links ziehen: laufen  ·  Rechts ziehen und loslassen: spritzen  ·  Super: Ring voll", w = tw(cr, tt, 19) + 30; plaque(c, VW / 2 - w / 2, VH * .22, w, 34, "#fff3b8"); ptxt(cr, tt, VW / 2, VH * .22 + 18, 19, INK); cr.globalAlpha = 1; } }
     if (!me.al && !S.ended) { if (me.rs > 0) txt(c, "Zurück in " + Math.ceil(me.rs), VW / 2, VH * .4, 40, "#fff"); else if (me.sd) { txt(c, "Du bist raus – du schaust zu", VW / 2, VH * .25, 30, "#fff"); txt(c, "Tippe, um die Ansicht zu wechseln", VW / 2, VH * .25 + 30, 18, "#ffe9a8"); } }
     if (S.banner) { const b = S.banner; b.t += dt; const k = Math.min(1, b.t * 5), a = b.t > b.d - .4 ? Math.max(0, (b.d - b.t) / .4) : 1; if (b.t > b.d) S.banner = null; else { c.globalAlpha = a; txt(c, b.s, VW / 2, b.small ? VH * .3 : VH * .36, (b.small ? 28 : 52) * (.6 + .4 * k), "#ffe45e"); c.globalAlpha = 1; } }
     if (S.err) txt(c, S.err, VW / 2, VH * .55, 24, "#ffb4a8");
+  }
+  /* ---------- VS-Vorstellung mit Countdown (alles gezeichnet) ---------- */
+  function drawVs(now) {
+    const ease = k => { k = clampN(k, 0, 1); const c1 = 1.5, c3 = c1 + 1; return 1 + c3 * Math.pow(k - 1, 3) + c1 * Math.pow(k - 1, 2); };
+    c.fillStyle = "rgba(14,24,48,.58)"; fr(0, 0, VW, VH);
+    const pls = S.players, rows = S.ffa ? [pls] : [pls.filter(p => p.tm !== S.myTeam), pls.filter(p => p.tm === S.myTeam)];
+    const cw = Math.min(VW * (S.ffa ? .17 : .25), 230), ch = Math.min(VH * .32, 180);
+    rows.forEach((row, ri) => {
+      const y = S.ffa ? VH * .3 : ri === 0 ? VH * .1 : VH * .5, dirx = ri === 0 ? 1 : -1, gap = 14, tw_ = row.length * cw + (row.length - 1) * gap;
+      row.forEach((p, i) => {
+        const e = ease((S.vsT - i * .12 - ri * .2) / .55), x0 = VW / 2 - tw_ / 2 + i * (cw + gap), x = x0 + (1 - e) * VW * .7 * dirx, rot = (i % 2 ? .02 : -.02) + (1 - e) * .15 * dirx, team = S.ffa ? 0 : p.tm, you = p.id === S.you;
+        c.save(); c.translate(x + cw / 2, y + ch / 2); c.rotate(rot); c.translate(-cw / 2, -ch / 2);
+        plaque(c, 0, 0, cw, ch, S.ffa ? "#cfe9ff" : team === 0 ? "#bcdcff" : "#ffc7bd", 0);
+        c.fillStyle = hexA(S.ffa ? "#ffffff" : TEAMC[team], .22); c.beginPath(); c.moveTo(cw * .5, 4); c.lineTo(cw - 4, 4); c.lineTo(cw - 4, ch * .72); c.lineTo(cw * .22, ch * .72); c.closePath(); c.fill();
+        c.save(); c.beginPath(); c.rect(2, 2, cw - 4, ch * .76); c.clip(); drawDrop(cr, p.c, cw * .5, ch * .6, ch * .5, now + i, { alpha: 1 }); c.restore();
+        c.fillStyle = INK; c.beginPath(); c.rect(0, ch * .76, cw, ch * .24); c.fill();
+        ptxt(cr, p.n.length > 12 ? p.n.slice(0, 11) + "…" : p.n, cw * .5, ch * .88, Math.min(26, ch * .15), you ? "#ffe45e" : "#fff");
+        c.fillStyle = "#fff3b8"; c.beginPath(); c.arc(20, 20, 16, 0, TAU); c.fill(); c.stroke(); ptxt(cr, String(p.lv || 1), 20, 21, 20, INK);
+        if (!p.h) { c.save(); c.translate(cw - 12, 16); c.rotate(.2); ptxt(cr, "Bot", 0, 0, 15, "#4b5a82"); c.restore(); }
+        c.restore();
+        if (you) { const by = y + ch + 4 + Math.sin(now * 6) * 3; c.fillStyle = "#58d36c"; c.strokeStyle = INK; c.lineWidth = 3; c.beginPath(); c.moveTo(x0 + cw / 2, by + 14); c.lineTo(x0 + cw / 2 - 12, by); c.lineTo(x0 + cw / 2 + 12, by); c.closePath(); c.fill(); c.stroke(); }
+      });
+    });
+    if (!S.ffa) { const k = ease((S.vsT - .5) / .4), sz = 74 * k; c.save(); c.translate(VW / 2, VH * .475); c.rotate(-.08); txt(c, "VS", 0, 0, sz, "#fff"); c.restore(); }
+    const plateW = tw(cr, S.md.n, 34) + 50; plaque(c, 14, VH - 64, plateW, 46, "#ffe9a0", -.02); ptxt(cr, S.md.n, 14 + plateW / 2, VH - 40, 34, INK);
+    const kk = (now % 1); txt(c, "Los geht's in", VW - 150, VH - 52, 24, "#fff"); txt(c, String(S.ph), VW - 52, VH - 46, 90 - kk * 18, "#ffe45e");
   }
   const ICONIMG = {};
   return { start, frame, get active() { return !!S; }, resume() { const m = stored(); if (m && Date.now() - m.at < 12 * 60e3) { start({ id: m.id }); return true; } return false; } };

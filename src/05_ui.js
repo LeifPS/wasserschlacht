@@ -42,6 +42,8 @@ function refreshHud() {
   $("icoCoin").style.backgroundImage = `url(${iconURL("coin", "c", 48)})`; $("icoGem").style.backgroundImage = `url(${iconURL("gem", "g", 48)})`;
   const dots = { shop: 0, abil: P.drops.reduce((a, b) => a + b, 0), weap: 0, look: 0, quest: (P.daily.canClaim ? 1 : 0) + P.q.list.filter(q => !q.claimed && q.have >= q.need).length };
   document.querySelectorAll("#nav .btn").forEach(b => { const d = b.querySelector(".dot"), n = dots[b.dataset.id] || 0; if (d) { d.textContent = n; d.hidden = !n; } });
+  { const d = P.daily; $("dailyStrip").innerHTML = Array.from({ length: 7 }, (_, i) => { const done = !d.canClaim && i <= d.streak, now = d.canClaim && i === d.next; return `<i class="${done ? "done" : now ? "now" : ""}">${done ? "✓" : i + 1}</i>`; }).join(""); $("dailyStrip").onclick = () => { sfx("click"); winQuest(); }; }
+  { const md = UI.ranked ? "Ranked" : "Zufälliger Modus"; $("modeBar").innerHTML = `<b>${md}</b><span>${UI.ranked ? "Nur Team-Modi · Rang steigt oder sinkt" : "Der Modus wird beim Start gewürfelt"}</span>`; }
   const rk = RANKS[P.rank.tier]; $("chipRanked").textContent = UI.ranked ? "Ranked: " + rk.n : "Ranked"; $("chipRanked").setAttribute("aria-pressed", UI.ranked);
   if (UI.win && UI.win.render) renderWin();
 }
@@ -237,9 +239,23 @@ function onPartyState() {
 /* ---------- Warteschlange ---------- */
 function onQueueState() {
   let q = $("queue"); const st = Lob.q;
-  if (!st) { if (q) q.remove(); $("playBtn").textContent = "Spielen"; return; }
-  if (!q) { q = document.createElement("div"); q.id = "queue"; q.innerHTML = `<div class="box panel"><h2>Suche Mitspieler …</h2><div class="big" id="qT">0</div><div class="muted" id="qI"></div><div class="tabs" style="justify-content:center"><button class="btn warn" id="qC">Abbrechen</button></div></div>`; $("app").appendChild(q); $("qC").onclick = () => { sfx("back"); Lob.send({ t: "cancel" }); }; }
-  $("qT").textContent = st.w + " s"; $("qI").textContent = (st.ranked ? "Ranked · " : "") + "Nach spätestens " + st.bots + " s füllen Bots die freien Plätze auf. Zufälliger Modus.";
+  if (!st) { if (q) q.remove(); G.queueAnim = null; $("playBtn").textContent = "Spielen"; return; }
+  if (!q) {
+    q = document.createElement("div"); q.id = "queue";
+    q.innerHTML = `<canvas id="qCv"></canvas><div id="qTitle"></div><div id="qSub"></div><button class="btn warn" id="qC">Abbrechen</button><div id="qTip"></div>`;
+    $("app").appendChild(q); $("qC").onclick = () => { sfx("back"); Lob.send({ t: "cancel" }); };
+    const tips = ["Ziehe links zum Laufen und rechts zum Spritzen.", "Gras ist ein gutes Versteck.", "Mit dem Super-Ring lädst du einen starken Spritzer.", "Zusammen im Team gewinnt man leichter.", "Kisten verstecken manchmal Kraft-Tropfen."];
+    $("qTip").textContent = tips[Math.floor(Math.random() * tips.length)];
+    G.queueAnim = t => {
+      const cv = $("qCv"); if (!cv) return; const dpr = Math.min(2, devicePixelRatio || 1); sizeCv(cv, dpr); const cr = cv.getContext("2d"), w = cv.width, h = cv.height; cr.setTransform(1, 0, 0, 1, 0, 0); cr.clearRect(0, 0, w, h);
+      const c = sketchCtx(cr, 3.7, 40), cx = w / 2, cy = h / 2, S = Math.min(w, h) * .5;
+      for (let i = 0; i < 3; i++) { const k = (t * .6 + i / 3) % 1; cr.globalAlpha = (1 - k) * .5; cr.lineWidth = 4 * dpr; cr.strokeStyle = "#fff"; cr.beginPath(); cr.arc(cx, cy, S * (.55 + k * .6), 0, TAU); cr.stroke(); } cr.globalAlpha = 1;
+      cr.lineWidth = 5 * dpr; cr.strokeStyle = INK; star(cr, cx, cy, S * .62, "#ffd23f", Math.sin(t * 1.4) * .25); cr.stroke();
+      if (G.P) drawDrop(cr, G.P.eqC, cx, cy + S * .08, S * .62, t, {});
+    };
+  }
+  const st2 = Lob.q, found = Math.min(6, Math.max(1, st2.humans || 1));
+  $("qTitle").textContent = "Spieler gefunden " + found + "/6"; $("qSub").textContent = (st2.ranked ? "Ranked · " : "") + st.w + " s · Nach spätestens " + st.bots + " s füllen Bots auf";
   $("playBtn").textContent = "Suche läuft";
 }
 function doPlay() {
@@ -252,7 +268,7 @@ function onMatchFound(m) {
   closeWin(); sfx("go"); try { localStorage.setItem("ws_match", JSON.stringify({ id: m.id, at: Date.now() })); } catch (e) {}
   const md = MODES[m.mode], ov = document.createElement("div"); ov.id = "modeov"; ov.style.cssText = "position:fixed;inset:0;z-index:50;background:rgba(15,40,70,.8);display:flex;align-items:center;justify-content:center;text-align:center;color:#fff";
   ov.innerHTML = `<div><div style="font:1.4rem var(--f-display);opacity:.9">${m.ranked ? "Ranked-Match" : "Match gefunden"}</div><div style="font:5rem/1 var(--f-display);text-shadow:0 4px 0 #1d2742,3px 3px 0 #1d2742,-3px 3px 0 #1d2742;transform:rotate(-2deg)">${md.n}</div><div style="font-size:1.3rem;max-width:30rem;margin:.5rem auto;text-shadow:0 2px 0 #1d2742">${md.d}</div></div>`;
-  document.body.appendChild(ov); setTimeout(() => ov.remove(), 2200);
+  document.body.appendChild(ov); setTimeout(() => ov.remove(), 1400);
   Match.start(m);
 }
 
@@ -272,6 +288,6 @@ function tickNums(dt) { for (const [k, t, id] of [["dc", "tc", "curCoins"], ["dg
 function frame(ms) {
   const t = ms / 1000, dt = Math.min(.1, t - lastT); lastT = t;
   if (G.screen === "match") { try { Match.frame(t, dt); } catch (err) { console.error(err); } }
-  else { tickNums(dt); drawBg(t); if (G.screen === "lobby") drawHero(t, dt); if (UI.look && $("lookCv")) drawLook(t); if (G.dropAnim) G.dropAnim(t, dt); if (G.screen === "auth") { const ad = $("authDrop"); if (ad) { const c = ad.getContext("2d"); c.clearRect(0, 0, 256, 256); drawDrop(c, { ...DEFAULT_COS, hat: "hat_party" }, 128, 140, 150, t, {}); } } }
+  else { tickNums(dt); drawBg(t); if (G.screen === "lobby") drawHero(t, dt); if (UI.look && $("lookCv")) drawLook(t); if (G.dropAnim) G.dropAnim(t, dt); if (G.queueAnim) G.queueAnim(t); if (G.screen === "auth") { const ad = $("authDrop"); if (ad) { const c = ad.getContext("2d"); c.clearRect(0, 0, 256, 256); drawDrop(c, { ...DEFAULT_COS, hat: "hat_party" }, 128, 140, 150, t, {}); } } }
   requestAnimationFrame(frame);
 }

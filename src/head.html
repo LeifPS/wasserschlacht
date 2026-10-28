@@ -91,10 +91,12 @@ h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0}
 #nav .btn{display:flex;flex-direction:column;align-items:center;gap:0;min-width:4.2rem;padding:.2rem .5rem;font-size:.95rem;position:relative;line-height:1}
 #nav img{width:2.2rem;height:2.2rem;pointer-events:none}
 #nav .dot{position:absolute;right:-.25rem;top:-.35rem;background:#e84a3a;color:#fff;border-radius:50%;min-width:1.2rem;height:1.2rem;font-size:.8rem;line-height:1.2rem}
-#queue{position:fixed;inset:0;background:rgba(20,60,90,.55);display:flex;align-items:center;justify-content:center;z-index:20}
-#queue .box{padding:1rem 1.6rem;text-align:center;display:grid;gap:.5rem;min-width:min(90vw,20rem)}
-#queue h2{font-size:2.2rem}
-#queue .big{font:3rem/1 var(--f-display);color:var(--accent)}
+#queue{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 40%,#7a2d63 0%,#3a1747 55%,#170a22 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem;z-index:20;color:#fff;text-align:center;padding:1rem}
+#queue canvas{width:min(46vh,16rem);height:min(46vh,16rem)}
+#qTitle{font:2.4rem/1 var(--f-display);text-shadow:0 3px 0 #1d2742,2px 2px 0 #1d2742,-2px 2px 0 #1d2742}
+#qSub{font-size:1.1rem;opacity:.85;text-shadow:0 2px 0 #1d2742}
+#qTip{position:absolute;bottom:1.2rem;left:0;right:0;font:1.25rem var(--f-display);text-shadow:0 2px 0 #1d2742}
+#queue .btn{position:absolute;left:1rem;bottom:1rem;margin:0}
 #party{position:absolute;left:max(.8rem,env(safe-area-inset-left));bottom:calc(max(.5rem,env(safe-area-inset-bottom)) + 4.4rem);padding:.3rem .6rem;font-size:.95rem;display:none}
 
 /* Fenster */
@@ -155,6 +157,32 @@ h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0}
 #emotes{position:fixed;z-index:25;display:grid;grid-template-columns:repeat(4,auto);gap:.35rem;padding:.4rem;right:max(.6rem,env(safe-area-inset-right));top:calc(max(.5rem,env(safe-area-inset-top)) + 3.2rem)}
 #emotes .btn{font-size:1rem;min-height:2rem;padding:0 .5rem}
 .tut{position:fixed;left:50%;bottom:30%;transform:translateX(-50%);z-index:12;padding:.4rem .9rem;text-align:center;pointer-events:none;max-width:80vw}
+#result{padding:0;background:none;display:block;overflow:hidden}
+#result #resCv{position:absolute;inset:0;width:100%;height:100%}
+#resRew{position:absolute;left:0;right:0;bottom:4.6rem;text-align:center;color:#fff;font-family:var(--f-display);text-shadow:0 2px 0 #1d2742,2px 2px 0 #1d2742;display:grid;gap:.2rem;pointer-events:none}
+#resRew .rew{display:flex;gap:1rem;justify-content:center;font-size:1.5rem}
+#resBtns{position:absolute;right:1rem;bottom:1rem;display:flex;gap:.8rem}
+#qTip{padding-left:9rem;padding-right:1rem}
+/* Lobby-Neuordnung: links Menü, Mitte Held, rechts unten Spielen */
+#hero{left:24%;width:36%;top:9%;bottom:12%}
+#nav{left:max(.6rem,env(safe-area-inset-left));top:21%;bottom:auto;transform:none;flex-direction:column;gap:.55rem;width:min(11rem,24vw)}
+#nav .btn{flex-direction:row;justify-content:flex-start;gap:.5rem;padding:.25rem .6rem;font-size:1.15rem;transform:rotate(-1.2deg);min-width:0}
+#nav .btn:nth-child(even){transform:rotate(1deg)}
+#nav img{width:2rem;height:2rem}
+#nav .dot{right:-.35rem;top:-.45rem}
+#side{top:auto;bottom:max(.7rem,env(safe-area-inset-bottom));right:max(.8rem,env(safe-area-inset-right));width:min(42%,19rem);gap:.45rem}
+#side #sideInfo{order:0;text-align:right;font-size:.95rem}
+#modeRow{order:1;justify-content:flex-end}
+#modeRow .btn,#modeRow .chip{flex:none}
+#dailyStrip{order:2;display:flex;gap:.25rem;width:100%;padding:.3rem .4rem;background:var(--paper);border:3px solid var(--ink);border-radius:var(--wob);box-shadow:3px 4px 0 var(--ink);cursor:pointer;position:relative}
+#dailyStrip::before{content:"Tägliche Belohnung";position:absolute;top:-1.15rem;left:.6rem;font:1rem var(--f-display);background:var(--ink);color:#fff;padding:0 .5rem;border-radius:.4rem .4rem 0 0}
+#dailyStrip i{flex:1;aspect-ratio:1;border:2.5px solid var(--ink);border-radius:var(--wob);background:#bcdcff;display:grid;place-items:center;font:.95rem var(--f-display);font-style:normal}
+#dailyStrip i.done{background:#8fe3a0}
+#dailyStrip i.now{background:var(--marker);animation:pulse 1.2s ease-in-out infinite}
+#modeBar{order:3;width:100%;padding:.3rem .7rem;background:var(--ink);color:#fff;border-radius:var(--wob);display:grid;line-height:1.1;text-align:left;transform:rotate(-.6deg)}
+#modeBar b{font:1.3rem var(--f-display);color:#ffe45e}
+#modeBar span{font-size:.85rem;opacity:.85}
+#playBtn{order:4;font-size:2.8rem;padding:.4rem 1rem}
 </style>
 <body>
 <canvas id="bg"></canvas>
@@ -177,9 +205,11 @@ h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0}
     </div>
     <div id="hero"><canvas id="heroCv"></canvas></div>
     <div id="side">
-      <button class="btn go" id="playBtn">Spielen</button>
+      <div class="muted" id="sideInfo"></div>
       <div id="modeRow"><button class="chip" id="chipRanked" aria-pressed="false">Ranked</button><button class="chip" id="chipParty">Party</button></div>
-      <div class="muted" id="sideInfo" style="text-align:right;font-size:.9rem"></div>
+      <div id="dailyStrip" title="Tägliche Belohnung"></div>
+      <div id="modeBar"><b>Zufälliger Modus</b><span>Der Modus wird beim Start gewürfelt</span></div>
+      <button class="btn go" id="playBtn">Spielen</button>
     </div>
     <div id="party" class="panel"></div>
     <div id="nav"></div>
@@ -187,3 +217,4 @@ h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0}
 </div>
 <div id="toasts"></div>
 <div id="rotate">Bitte drehe dein Gerät ins Querformat</div>
+

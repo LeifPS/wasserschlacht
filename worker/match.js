@@ -5,7 +5,7 @@ import { makeBotLoadout } from "./bots.js";
 import { MODES, TICK, mulberry } from "./shared.mjs";
 
 const SNAP_EVERY = 2;           // Schnappschuss alle 2 Ticks = 15 pro Sekunde
-const WAIT_MS = 10000, COUNT_S = 3, CLOSE_AFTER_MS = 14000;
+const WAIT_MS = 10000, COUNT_S = 5, CLOSE_AFTER_MS = 14000;
 
 export class Match extends DurableObject {
   sim = null; phase = "idle"; socks = new Map(); cfg = null; timer = null; count = 0; created = 0; left = new Set(); rewarded = new Set(); endInfo = null;
