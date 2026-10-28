@@ -1,15 +1,16 @@
 const WEAPONS_MAP = W;
 /* ===== MATCH: Verbindung, Eingabe, Vorhersage, Zeichnen ===== */
 const Match = (() => {
-  let S = null, cv, c, VW = 800, VH = 360, dpr = 1;
+  let S = null, cv, c, cr, VW = 800, VH = 360, dpr = 1;
   const INTERP = 0.11, DT_ = 1 / TICK;
   const IN = { mv: { id: null, ox: 0, oy: 0, x: 0, y: 0 }, aim: { id: null, x: 0, y: 0, mag: 0, ang: 0 }, sup: { id: null, x: 0, y: 0, mag: 0, ang: 0 }, keys: {}, mouse: { x: 0, y: 0, in: false }, lastAng: 0, emote: false, emoteAt: 0, sendAcc: 0 };
+  const fr = (x, y, w, h) => { c.beginPath(); c.rect(x, y, w, h); c.fill(); };
   const stored = () => { try { return JSON.parse(localStorage.getItem("ws_match")); } catch (e) { return null; } };
 
   /* ---------- Start und Verbindung ---------- */
   function start(m) {
     if (S) return; S = { id: m.id, tries: 0, init: null, ended: false, left: false, parts: [], texts: [], feed: [], banner: null, emotes: [], trails: [], shake: 0, cam: { x: 0, y: 0 }, pending: [], seq: 0, t0: performance.now() / 1000, bs: new Map(), hitFlash: {}, snapT: 0, snap: null, pl: new Map(), pause: false, specIdx: 0, kb: [0, 0], err: "", fireCd: 0, bucketHit: [0, 0], lastHp: -1, sounded: 0 };
-    showScreen("match"); Snd.music("match"); cv = $("cv"); c = cv.getContext("2d"); bindInput(); connect();
+    showScreen("match"); Snd.music("match"); cv = $("cv"); cr = cv.getContext("2d"); c = sketchCtx(cr, 3.7, 40); bindInput(); connect();
   }
   function connect() {
     if (!S || S.ended || S.left) return;
@@ -180,7 +181,7 @@ const Match = (() => {
   function frame(t, dt) {
     if (!S) return; dpr = Math.min(2, devicePixelRatio || 1); const w = Math.round(innerWidth * dpr), h = Math.round(innerHeight * dpr); if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
     VW = innerWidth; VH = innerHeight; c.setTransform(1, 0, 0, 1, 0, 0);
-    if (!S.init) { c.fillStyle = "#4aa3d8"; c.fillRect(0, 0, w, h); c.setTransform(dpr, 0, 0, dpr, 0, 0); txt(c, S.err || "Verbinde mit dem Match …", VW / 2, VH / 2, 34, "#fff"); return; }
+    if (!S.init) { cr.fillStyle = "#4aa3d8"; cr.fillRect(0, 0, w, h); c.setTransform(dpr, 0, 0, dpr, 0, 0); txt(c, S.err || "Verbinde mit dem Match …", VW / 2, VH / 2, 34, "#fff"); return; }
     const now = performance.now() / 1000, me = S.me, M = S.M, mv = moveVec();
     // eigene Bewegung vorhersagen und Eingabe senden
     if (S.cur && me.al && !S.pause && !S.ended) {
@@ -199,17 +200,17 @@ const Match = (() => {
     if (tgt) { const k = S.camInit ? Math.min(1, dt * 9) : 1; S.camInit = true; S.cam.x += (tgt.x - S.cam.x) * k; S.cam.y += (tgt.y - S.cam.y) * k; }
     const vw = cv.width / sc, vh = cv.height / sc; S.cam.x = clampN(S.cam.x, Math.min(vw / 2, M.px / 2), Math.max(M.px - vw / 2, M.px / 2)); S.cam.y = clampN(S.cam.y, Math.min(vh / 2, M.py / 2), Math.max(M.py - vh / 2, M.py / 2));
     S.shake = Math.max(0, S.shake - dt * 16); const shx = (Math.random() - .5) * S.shake, shy = (Math.random() - .5) * S.shake;
-    c.fillStyle = "#2a5d87"; c.fillRect(0, 0, cv.width, cv.height);
+    cr.fillStyle = "#2a5d87"; cr.fillRect(0, 0, cv.width, cv.height);
     c.save(); c.translate(cv.width / 2 - S.cam.x * sc + shx * dpr, cv.height / 2 - S.cam.y * sc + shy * dpr); c.scale(sc, sc);
     const x0 = Math.max(0, S.cam.x - vw / 2 - 2), y0 = Math.max(0, S.cam.y - vh / 2 - 2), x1 = Math.min(M.px, S.cam.x + vw / 2 + 2), y1 = Math.min(M.py, S.cam.y + vh / 2 + 2);
-    c.drawImage(Wd.floor, x0 * FSC, y0 * FSC, (x1 - x0) * FSC, (y1 - y0) * FSC, x0, y0, x1 - x0, y1 - y0);
+    cr.drawImage(Wd.floor, x0 * FSC, y0 * FSC, (x1 - x0) * FSC, (y1 - y0) * FSC, x0, y0, x1 - x0, y1 - y0);
     const tx0 = Math.max(0, Math.floor(x0 / TS)), tx1 = Math.min(M.w - 1, Math.floor(x1 / TS)), ty0 = Math.max(0, Math.floor(y0 / TS) - 1), ty1 = Math.min(M.h - 1, Math.floor(y1 / TS) + 1);
     c.lineJoin = c.lineCap = "round";
     // Wasserglitzer
     for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) { const tt = M.tiles[ty * M.w + tx]; if (tt === T_WATER || tt >= T_CE) { const r = hsh(tx, ty, 3), ph = (t * .6 + r * 5) % 1; c.strokeStyle = `rgba(255,255,255,${.7 * Math.sin(ph * Math.PI)})`; c.lineWidth = 1.6; c.beginPath(); c.moveTo(tx * TS + 6 + r * 12, ty * TS + 8 + r * 10); c.quadraticCurveTo(tx * TS + 12 + r * 12, ty * TS + 4 + r * 10, tx * TS + 18 + r * 12, ty * TS + 8 + r * 10); c.stroke(); } }
     // Zonen am Boden
     const st = S.st || {}, md = S.init.mode;
-    if (md === "showdown" && st.z) { c.save(); c.beginPath(); c.rect(0, 0, M.px, M.py); c.arc(st.z[0], st.z[1], Math.max(1, st.z[2]), 0, TAU, true); c.fillStyle = "rgba(168,122,66,.55)"; c.fill("evenodd"); c.restore(); c.setLineDash([10, 8]); wavyRing(c, st.z[0], st.z[1], st.z[2], t, "#7a4a22", 3); c.setLineDash([]); }
+    if (md === "showdown" && st.z) { cr.save(); cr.beginPath(); cr.rect(0, 0, M.px, M.py); cr.arc(st.z[0], st.z[1], Math.max(1, st.z[2]), 0, TAU, true); cr.fillStyle = "rgba(168,122,66,.55)"; cr.fill("evenodd"); cr.restore(); c.setLineDash([10, 8]); wavyRing(c, st.z[0], st.z[1], st.z[2], t, "#7a4a22", 3); c.setLineDash([]); }
     if (md === "koenig" && st.z) { const col = st.in && st.in[0] && !st.in[1] ? TEAMC[0] : st.in && st.in[1] && !st.in[0] ? TEAMC[1] : "#ffd23f"; c.fillStyle = hexA(col, .22); c.beginPath(); c.arc(st.z[0], st.z[1], st.z[2], 0, TAU); c.fill(); wavyRing(c, st.z[0], st.z[1], st.z[2], t, col, 4); txt(c, "Becken", st.z[0], st.z[1] - st.z[2] - 10, 16, "#fff"); }
     if (md === "eroberung" && st.pts) st.pts.forEach((p, i) => { const cp = M.caps[i], r = 2.4 * TS, col = p[1] >= 0 ? TEAMC[p[1]] : "#ffffff"; c.fillStyle = hexA(p[1] >= 0 ? col : "#cfd8e8", .28); c.beginPath(); c.arc(cp[0], cp[1], r, 0, TAU); c.fill(); wavyRing(c, cp[0], cp[1], r, t, col, 4); const pr = p[0]; c.lineWidth = 7; c.strokeStyle = INK; c.beginPath(); c.arc(cp[0], cp[1], r - 10, -Math.PI / 2, -Math.PI / 2 + TAU * Math.abs(pr)); c.stroke(); c.lineWidth = 4; c.strokeStyle = pr < 0 ? TEAMC[0] : TEAMC[1]; c.beginPath(); c.arc(cp[0], cp[1], r - 10, -Math.PI / 2, -Math.PI / 2 + TAU * Math.abs(pr)); c.stroke(); txt(c, String.fromCharCode(65 + i), cp[0], cp[1], 26, "#fff"); });
     if (md === "perlen" && M.mine) { c.fillStyle = "rgba(60,40,90,.35)"; c.beginPath(); c.ellipse(M.mine[0], M.mine[1], 30, 20, 0, 0, TAU); c.fill(); c.lineWidth = 2.4; c.strokeStyle = INK; c.stroke(); }
@@ -256,15 +257,15 @@ const Match = (() => {
     if (fl & 2) { c.fillStyle = "rgba(150,220,255,.3)"; c.strokeStyle = "rgba(255,255,255,.9)"; c.lineWidth = 2.4; c.beginPath(); c.arc(p.x, p.y - 4, PR + 9, 0, TAU); c.fill(); c.stroke(); }
     if (fl & 256) { c.strokeStyle = "rgba(90,230,140,.8)"; c.lineWidth = 2.4; wavyRing(c, p.x, p.y, PR + 6, t, "rgba(90,230,140,.8)", 2.4); }
     if (fl & 4) { c.fillStyle = "rgba(160,200,255,.4)"; c.beginPath(); c.ellipse(p.x, p.y + 9, 16, 6, 0, 0, TAU); c.fill(); }
-    drawDrop(c, cos, p.x, p.y - 7, s * scl, t + id * 1.3, { moving, aim: ang, weapon: info.w, skin: cos.skin, hit: e.hit, alpha });
+    drawDrop(cr, cos, p.x, p.y - 7, s * scl, t + id * 1.3, { moving, aim: ang, weapon: info.w, skin: cos.skin, hit: e.hit, alpha });
     if (fl & 8) { for (let i = 0; i < 3; i++) star(c, p.x + Math.cos(t * 6 + i * 2.1) * 14, p.y - 28 + Math.sin(t * 6 + i * 2.1) * 3, 4, "#ffe45e", t * 3 + i); }
   }
   function drawTag(o) {
     const { id, p, e } = o, info = e.info, me = id === S.you, fl = me ? S.me.fl : p.fl; if (!(fl & 1)) return; const ally = me || (!S.ffa && info.tm === S.myTeam);
     const hp = me ? S.me.hp : p.hp, mhp = me ? S.me.mhp : p.mhp, w = 36, y = p.y - 36, f = clampN(hp / mhp, 0, 1);
-    c.fillStyle = "rgba(29,39,66,.92)"; c.fillRect(p.x - w / 2 - 2, y - 2, w + 4, 8); c.fillStyle = me ? "#4cd964" : ally ? "#5aa8ff" : "#ff5a4f"; c.fillRect(p.x - w / 2, y, w * f, 4);
+    c.fillStyle = "rgba(29,39,66,.92)"; fr(p.x - w / 2 - 2, y - 2, w + 4, 8); c.fillStyle = me ? "#4cd964" : ally ? "#5aa8ff" : "#ff5a4f"; fr(p.x - w / 2, y, w * f, 4);
     if (!me) txt(c, info.n, p.x, y - 9, 12, ally ? "#d7ecff" : "#ffd6d0"); else txt(c, Math.round(hp) + "", p.x, y - 8, 13, "#fff");
-    if (me && S.me.am != null) { const n = S.w.ammo; for (let i = 0; i < n; i++) { const f2 = clampN(S.me.am - i, 0, 1); c.fillStyle = "rgba(29,39,66,.92)"; c.fillRect(p.x - w / 2 + i * (w / n), y + 8, w / n - 2, 5); c.fillStyle = "#ffb21f"; c.fillRect(p.x - w / 2 + i * (w / n), y + 9, (w / n - 2) * f2, 3); } }
+    if (me && S.me.am != null) { const n = S.w.ammo; for (let i = 0; i < n; i++) { const f2 = clampN(S.me.am - i, 0, 1); c.fillStyle = "rgba(29,39,66,.92)"; fr(p.x - w / 2 + i * (w / n), y + 8, w / n - 2, 5); c.fillStyle = "#ffb21f"; fr(p.x - w / 2 + i * (w / n), y + 9, (w / n - 2) * f2, 3); } }
     for (const em of S.emotes) if (em.id === id) { const k = Math.min(1, em.t * 6); drawEmote(c, em.n, p.x, p.y - 62 - em.t * 6, 30 * k); }
   }
   function drawProjectiles(now, t) {
@@ -328,7 +329,7 @@ const Match = (() => {
       if (S.ab) { const a = l.ab, act = S.ab.k === "a", cd = me.ab, rdy = act && cd <= 0; c.save(); c.lineWidth = 3.5; c.strokeStyle = INK; c.fillStyle = rdy ? "#fff7c9" : "rgba(255,255,255,.55)"; c.beginPath(); c.arc(a.x, a.y, a.r, 0, TAU); c.fill(); c.stroke(); const ic = iconURL("a", S.ab.id, 96); let im = ICONIMG[ic]; if (!im) { im = ICONIMG[ic] = new Image(); im.src = ic; } if (im.complete) { c.globalAlpha = rdy || !act ? 1 : .5; c.drawImage(im, a.x - a.r * .8, a.y - a.r * .8, a.r * 1.6, a.r * 1.6); c.globalAlpha = 1; } if (act && cd > 0) { c.fillStyle = "rgba(29,39,66,.55)"; c.beginPath(); c.moveTo(a.x, a.y); c.arc(a.x, a.y, a.r - 2, -Math.PI / 2, -Math.PI / 2 + TAU * clampN(cd / S.ab.cd, 0, 1)); c.closePath(); c.fill(); txt(c, Math.ceil(cd) + "", a.x, a.y, a.r * .7, "#fff"); } if (!act) txt(c, "passiv", a.x, a.y + a.r + 12, 12, "#fff"); c.restore(); }
     }
     // Leben unten Mitte
-    if (me.al) { const w = Math.min(260, VW * .3), x = VW / 2 - w / 2, y = VH - 52; c.fillStyle = "rgba(29,39,66,.9)"; c.fillRect(x - 3, y - 3, w + 6, 20); c.fillStyle = me.hp / me.mhp > .35 ? "#4cd964" : "#ff5a4f"; c.fillRect(x, y, w * clampN(me.hp / me.mhp, 0, 1), 14); txt(c, Math.round(me.hp) + " / " + me.mhp, VW / 2, y + 7, 14, "#fff"); }
+    if (me.al) { const w = Math.min(260, VW * .3), x = VW / 2 - w / 2, y = VH - 52; c.fillStyle = "rgba(29,39,66,.9)"; fr(x - 3, y - 3, w + 6, 20); c.fillStyle = me.hp / me.mhp > .35 ? "#4cd964" : "#ff5a4f"; fr(x, y, w * clampN(me.hp / me.mhp, 0, 1), 14); txt(c, Math.round(me.hp) + " / " + me.mhp, VW / 2, y + 7, 14, "#fff"); }
     if (md === "perlen" || me.cu) { const parts = []; if (md === "perlen") parts.push("Perlen: " + me.pr); if (me.cu) parts.push("Kraft: " + me.cu); txt(c, parts.join("   "), VW / 2, VH - 68, 17, "#ffe9a8"); }
     // Zähler und Hinweise
     if (S.ph > 0) { S.sawCount = true; const k = (now * 1) % 1; txt(c, String(S.ph), VW / 2, VH * .38, 120 - k * 20, "#fff"); txt(c, S.md.n, VW / 2, VH * .22, 38, "#ffe45e"); } else if (S.sawCount && !S.sounded) { S.sounded = 1; sfx("go"); }

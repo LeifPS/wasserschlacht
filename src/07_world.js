@@ -31,6 +31,10 @@ function buildWorld(M) {
     else if (t === T_WATER) { if (r < .5) { const px = x + 6 + r * 10; c.strokeStyle = "rgba(255,255,255,.8)"; k.beginPath(); k.moveTo(px, y + 12); k.quadraticCurveTo(px + 5, y + 8, px + 10, y + 12); k.stroke(); } }
     else if (t >= T_CE) { const d = currentDir(t); c.save(); c.translate(x + 16, y + 16); c.rotate(Math.atan2(d[1], d[0])); c.strokeStyle = "rgba(255,255,255,.9)"; c.lineWidth = 2.4; c.beginPath(); c.moveTo(-7, -6); c.lineTo(0, 0); c.lineTo(-7, 6); c.moveTo(3, -6); c.lineTo(10, 0); c.lineTo(3, 6); c.stroke(); c.restore(); }
   }
+  // Schraffur wie mit dem Stift
+  c.lineWidth = 1.3; c.strokeStyle = "rgba(29,39,66,.13)"; k.beginPath();
+  for (let ty = 0; ty < M.h; ty++) for (let tx = 0; tx < M.w; tx++) { const t = tl(tx, ty); if (t !== T_FLOOR && t !== T_GRASS) continue; const r = hsh(tx, ty, 11); if (r > .6) continue; const x = tx * TS + 4 + hsh(tx, ty, 12) * 8, y = ty * TS + 20 + hsh(tx, ty, 13) * 8; for (let i = 0; i < 3 + (r * 6 | 0) % 3; i++) { k.moveTo(x + i * 5, y); k.lineTo(x + i * 5 + 6, y - 7); } }
+  k.stroke();
   // Wasserränder
   c.lineWidth = 2.4; c.strokeStyle = INK; k.beginPath();
   for (let ty = 0; ty < M.h; ty++) for (let tx = 0; tx < M.w; tx++) {
@@ -39,7 +43,7 @@ function buildWorld(M) {
   }
   k.stroke();
   // Farblose Kachelfugen (hauchdünn)
-  c.strokeStyle = "rgba(29,39,66,.07)"; c.lineWidth = 1; c.beginPath(); for (let i = 1; i < M.w; i++) { c.moveTo(i * TS, 0); c.lineTo(i * TS, H2); } for (let j = 1; j < M.h; j++) { c.moveTo(0, j * TS); c.lineTo(W2, j * TS); } c.stroke();
+  c.strokeStyle = "rgba(29,39,66,.09)"; c.lineWidth = 1.2; k.beginPath(); for (let i = 1; i < M.w; i++) { k.moveTo(i * TS, 0); k.lineTo(i * TS, H2); } for (let j = 1; j < M.h; j++) { k.moveTo(0, j * TS); k.lineTo(W2, j * TS); } k.stroke();
   // Sprites
   const wall = [0, 1, 2].map(v => mkSprite(TS + 4, TS + 13, 2, 11, c2 => {
     const kk = sketchCtx(c2, 4 + v, TS * 1.3); c2.lineWidth = 2.2;
@@ -74,7 +78,7 @@ function drawBucket(c, x, y, team, hp, max, t, hit) {
   c.fillStyle = "rgba(255,255,255,.35)"; c.fillRect(-18, 0, 36, 5); c.fillStyle = "#b9e6fb"; c.beginPath(); c.ellipse(0, -10, 22, 6, 0, 0, 7); c.fill(); c.stroke();
   c.strokeStyle = INK; c.beginPath(); c.arc(0, -10, 22, Math.PI * 1.1, Math.PI * 1.9); c.stroke();
   c.restore();
-  const w = 56, f = Math.max(0, hp / max); c.fillStyle = "rgba(29,39,66,.9)"; c.fillRect(x - w / 2 - 2, y - 34, w + 4, 9); c.fillStyle = f > .35 ? "#4cd964" : "#ff5a4f"; c.fillRect(x - w / 2, y - 32, w * f, 5);
+  const w = 56, f = Math.max(0, hp / max); c.fillStyle = "rgba(29,39,66,.9)"; c.beginPath(); c.rect(x - w / 2 - 2, y - 34, w + 4, 9); c.fill(); c.fillStyle = f > .35 ? "#4cd964" : "#ff5a4f"; c.beginPath(); c.rect(x - w / 2, y - 32, w * f, 5); c.fill();
 }
 function drawEmote(c, n, x, y, s) {
   c.save(); c.translate(x, y); c.lineWidth = Math.max(2, s * .07); c.strokeStyle = INK; c.lineJoin = c.lineCap = "round";
