@@ -29,7 +29,7 @@ export class Lobby extends DurableObject {
 
   #onMsg(k, m) {
     const u = this.users.get(k); if (!u || !m) return;
-    if (m.t === "queue") this.#enqueue(k, !!m.ranked);
+    if (m.t === "queue") this.#enqueue(k, !!m.ranked, m.dev);
     else if (m.t === "cancel") this.#cancel(k);
     else if (m.t === "party") this.#partyOp(k, m);
     else if (m.t === "ping") this.#send(k, { t: "pong" });
@@ -63,14 +63,14 @@ export class Lobby extends DurableObject {
   }
 
   /* ----- Warteschlange ----- */
-  #enqueue(k, ranked) {
+  #enqueue(k, ranked, dev) {
     const code = this.partyOf.get(k), party = code ? this.parties.get(code) : null;
     if (party && party.leader !== k) return this.#send(k, { t: "qErr", error: "Nur der Party-Anführer startet die Suche." });
     const names = party ? party.members.filter(n => this.users.has(n)) : [k];
     if (this.queue.some(g => g.names.some(n => names.includes(n)))) return;
     if (ranked) { const low = names.find(n => this.users.get(n).lo.lvl < RANKED_MIN_LVL); if (low) return this.#send(k, { t: "qErr", error: "Ranked gibt es ab Level " + RANKED_MIN_LVL + "." }); }
     const lvl = Math.round(names.reduce((a, n) => a + this.users.get(n).lo.lvl, 0) / names.length);
-    this.queue.push({ names, ranked, at: Date.now(), lvl });
+    this.queue.push({ names, ranked, at: Date.now(), lvl, dev: typeof dev === "string" ? dev : "" });
     for (const n of names) this.#send(n, { t: "queued", ranked, bots: BOT_FILL_S });
     if (!this.timer) this.timer = setInterval(() => this.#tick(), 1000);
   }
@@ -99,7 +99,7 @@ export class Lobby extends DurableObject {
   }
 
   async #startMatch(pack, ranked) {
-    const pool = ranked ? TEAM_MODES : MODE_IDS, mode = pool[Math.floor(Math.random() * pool.length)], m = MODES[mode];
+    const pool = ranked ? TEAM_MODES : MODE_IDS, forced = this.env.FORCE_MODE === "any" ? (pack.map(g => g.dev).find(d => MODES[d]) || null) : this.env.FORCE_MODE && MODES[this.env.FORCE_MODE] ? this.env.FORCE_MODE : null, mode = forced || pool[Math.floor(Math.random() * pool.length)], m = MODES[mode];
     this.queue = this.queue.filter(g => !pack.includes(g));
     const players = []; let tc = [0, 0];
     if (m.ffa) { for (const g of pack) for (const n of g.names) players.push({ lo: this.users.get(n).lo, team: players.length, name: n }); }

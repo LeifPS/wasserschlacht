@@ -445,7 +445,7 @@ export class Sim {
   initInfo(forId) {
     const M = this.M;
     return {
-      t: "init", you: forId, mode: this.modeId, map: M.id, ranked: this.ranked, time: this.mode.time,
+      t: "init", you: forId, dc: dcList(this.base, M), mode: this.modeId, map: M.id, ranked: this.ranked, time: this.mode.time,
       players: this.players.map(p => ({ id: p.id, n: p.name, tm: p.team, h: p.human ? 1 : 0, w: p.w.id, wl: p.wl, a: p.a, al: p.al, c: p.lo.cos, lv: p.lo.lvl, mhp: p.maxHp }))
     };
   }
@@ -492,4 +492,5 @@ export class Sim {
   }
 }
 
+function dcList(base, M) { const o = []; for (let i = 0; i < base.tiles.length; i++) if (base.tiles[i] === T_CRATE && !M.crate.has(i)) o.push(i); return o; }
 function pushOutSafe(M, p) { const q = { x: p.x, y: p.y }; moveCircle(M, q, 0, 0, PR); p.x = q.x; p.y = q.y; }

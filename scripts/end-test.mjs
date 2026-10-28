@@ -1,0 +1,9 @@
+import { createRequire } from "module"; const { chromium } = createRequire(import.meta.url)("playwright");
+const OUT = process.env.OUT; const mode = process.env.DEV, leave = process.env.LEAVE;
+const b = await chromium.launch(); const ctx = await b.newContext({ viewport: { width: 844, height: 390 } }); const p = await ctx.newPage(); const errs = []; p.on("pageerror", e => errs.push(e.message)); p.on("console", m => { if (m.type() === "error") errs.push(m.text()); });
+const name = "E" + Math.floor(Math.random() * 1e6);
+await p.goto("http://localhost:8787/"); await p.waitForTimeout(600); await p.fill("#inName", name); await p.fill("#inPw", "geheim123"); await p.click("#btnReg"); await p.waitForTimeout(1200);
+await p.evaluate(m => Lob.send({ t: "queue", ranked: false, dev: m }), mode); await p.waitForSelector("#modeov", { timeout: 40000 }); await p.waitForTimeout(8000);
+if (leave) { await p.keyboard.press("Escape"); await p.waitForTimeout(400); await p.screenshot({ path: OUT + "/pause.png" }); await p.click("#pLeave"); await p.click("#pLeave"); await p.waitForSelector("#s-lobby:not([hidden])", { timeout: 8000 }); await p.waitForTimeout(800); await p.screenshot({ path: OUT + "/afterleave.png" }); console.log("left ok", await p.evaluate(() => G.P.stats.matches + " matches, coins " + G.P.coins)); }
+else { await p.waitForSelector("#result", { timeout: 200000 }); await p.waitForTimeout(600); await p.screenshot({ path: OUT + "/result.png" }); await p.click("#resOk"); await p.waitForSelector("#s-lobby:not([hidden])"); await p.waitForTimeout(800); await p.screenshot({ path: OUT + "/afterresult.png" }); console.log("result ok", await p.evaluate(() => JSON.stringify(G.P.stats) + " coins " + G.P.coins + " lvl " + G.P.lvl)); }
+console.log("errs", errs.length ? errs : "keine"); await b.close();
