@@ -248,7 +248,7 @@ const WEAPONS = [
     d: "Drei Strahlen, die von Wänden abprallen.",
     sup: { n: "Farbenregen", k: "s", mul: { n1: 4 }, set: { spr: 340 }, need: 1900 } }
 ];
-const W_PACE = (() => { WEAPONS.forEach(w => { w.rl = Math.round(w.rl * 1.45 * 10) / 10; w.spd = Math.round(w.spd * 0.68); if (w.sup) w.sup.need = Math.round(w.sup.need * 1.5); }); return 1; })();
+const W_PACE = (() => { WEAPONS.forEach(w => { w.rl = Math.round(w.rl * 1.45 * 10) / 10; w.spd = Math.round(w.spd * 0.68); w.dmg = Math.round(w.dmg * 1.8); if (w.sup) { w.sup.need = Math.round(w.sup.need * 1.5 * 1.8); if (w.sup.dmg) w.sup.dmg = Math.round(w.sup.dmg * 1.8); } }); return 1; })();
 const W = Object.fromEntries(WEAPONS.map(w => [w.id, w]));
 const WEAPON_PRICE = [300, 1200, 4500, 14000, 40000];
 WEAPONS.forEach(w => { if (w.id !== "pistole") w.price = WEAPON_PRICE[w.r]; });
@@ -279,10 +279,10 @@ const AB = Object.fromEntries(ABILITIES.map(a => [a.id, a]));
 /* Wirkungswerte je Fähigkeit (Basis, wird mit abilityPower(lvl) skaliert) */
 const AB_VAL = {
   sprint: { dur: 2.0, mul: 0.7 }, blase: { dur: 1.8, red: 0.6 }, zaeh: { hp: 0.10 }, flink: { spd: 0.08 },
-  heilregen: { heal: 0.34, dur: 3, rad: 4 }, pfuetze: { rad: 1.7, dur: 6, slow: 0.5, dps: 70 }, regen: { rate: 0.03, wait: 3 },
-  schwamm: { sup: 0.25 }, hecht: { dist: 5 }, welle: { rad: 3, dmg: 200, kb: 240, stun: 0.5 }, adrenalin: { dmg: 0.30, below: 0.4 },
+  heilregen: { heal: 0.34, dur: 3, rad: 4 }, pfuetze: { rad: 1.7, dur: 6, slow: 0.5, dps: 126 }, regen: { rate: 0.03, wait: 3 },
+  schwamm: { sup: 0.25 }, hecht: { dist: 5 }, welle: { rad: 3, dmg: 360, kb: 240, stun: 0.5 }, adrenalin: { dmg: 0.30, below: 0.4 },
   eisenhaut: { red: 0.12 }, platscher: { dist: 6 }, nebel: { dur: 3.5 }, raub: { frac: 0.10 }, druck: { dmg: 0.14, rng: 0.12 },
-  sturmflut: { rad: 5, dmg: 500, kb: 320, heal: 0.2 }, wiedergeburt: { hp: 0.5 }
+  sturmflut: { rad: 5, dmg: 900, kb: 320, heal: 0.2 }, wiedergeburt: { hp: 0.5 }
 };
 const abilityPower = lvl => 1 + 0.12 * (lvl - 1);
 const weaponPower = lvl => 1 + 0.07 * (lvl - 1);
@@ -383,7 +383,7 @@ const MODES = {
   perlen: { id: "perlen", n: "Perlenjagd", d: "Sammle 10 Perlen und halte sie 15 Sekunden.", teams: 2, per: 3, time: 260, map: "strand", need: 10, hold: 15 },
   knockout: { id: "knockout", n: "Knockout", d: "Drei Runden, kein Zurückkehren. Zwei Siege gewinnen.", teams: 2, per: 3, time: 100, map: "becken", rounds: 2 },
   koenig: { id: "koenig", n: "Königsbecken", d: "Halte das wandernde Becken und sammle Punkte.", teams: 2, per: 3, time: 260, map: "teich", goal: 100 },
-  heist: { id: "heist", n: "Eimer-Heist", d: "Zerstöre den Eimer der Gegner und schütze deinen.", teams: 2, per: 3, time: 260, map: "garten", bucketHp: 9000 },
+  heist: { id: "heist", n: "Eimer-Heist", d: "Zerstöre den Eimer der Gegner und schütze deinen.", teams: 2, per: 3, time: 260, map: "garten", bucketHp: 15000 },
   eroberung: { id: "eroberung", n: "Eroberung", d: "Halte drei Stellen auf der Karte und sammle Punkte.", teams: 2, per: 3, time: 260, map: "ufer", goal: 100 }
 };
 const MODE_IDS = Object.keys(MODES);
