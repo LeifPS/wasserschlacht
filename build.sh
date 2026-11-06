@@ -17,3 +17,4 @@ if [ -f src/head.html ]; then
   node -e "const s=require('fs').readFileSync('public/index.html','utf8');const m=s.match(/<script>([\s\S]*)<\/script>/)[1];try{new Function(m);console.log('client syntax ok')}catch(e){console.log('CLIENT ERR',e.message);process.exit(1)}"
 fi
 node --check worker/shared.mjs 2>/dev/null && echo "shared ok"
+python3 lgh/lgh-einbauen.py public/index.html wasserschlacht --pos ml
